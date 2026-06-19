@@ -1,0 +1,384 @@
+/**
+ * InnerVoice API Server
+ * Single-file Express backend with JSON file persistence.
+ * Deploy to Railway / Render / any Node.js host.
+ */
+
+// Load .env if present (local dev)
+try { require('fs').readFileSync('.env','utf8').split('\n').forEach(line=>{ const [k,...v]=line.split('='); if(k&&k.trim()&&!k.startsWith('#')) process.env[k.trim()]=v.join('=').trim(); }); } catch(e){}
+
+const express = require('express');
+const cors    = require('cors');
+const fs      = require('fs');
+const path    = require('path');
+const rateLimit = require('express-rate-limit');
+
+const app  = express();
+const PORT = process.env.PORT || 3001;
+
+// ─── Admin password (set via env var in production) ───────────────────────────
+const ADMIN_PASS = process.env.ADMIN_PASS || 'adminonly';
+
+// ─── DB file path (Railway/Render: use /tmp or a persistent volume) ───────────
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'db.json');
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
+app.use(express.json({ limit: '1mb' }));
+
+// CORS — allow your Netlify domain + localhost for dev
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '*').split(',');
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Rate limiting — prevent brute-force on login
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  message: { error: 'Terlalu banyak percobaan login. Coba lagi setelah 15 menit.' }
+});
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  message: { error: 'Terlalu banyak permintaan. Coba lagi nanti.' }
+});
+app.use('/api/', apiLimiter);
+
+// ─── DB helpers ───────────────────────────────────────────────────────────────
+function readDB() {
+  try {
+    if (!fs.existsSync(DB_PATH)) return { users: {}, stories: [] };
+    return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+  } catch (e) {
+    console.error('DB read error:', e.message);
+    return { users: {}, stories: [] };
+  }
+}
+
+function writeDB(db) {
+  try {
+    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
+  } catch (e) {
+    console.error('DB write error:', e.message);
+  }
+}
+
+// Seed initial users if DB is empty
+function seedIfEmpty() {
+  const db = readDB();
+  if (Object.keys(db.users).length === 0) {
+    // Import seed from seed-users.js
+    try {
+      const seed = require('./seed-users.js');
+      db.users = seed;
+      writeDB(db);
+      console.log(`Seeded ${Object.keys(seed).length} users.`);
+    } catch (e) {
+      console.log('No seed file found, starting with empty user list.');
+    }
+  }
+}
+seedIfEmpty();
+
+// ─── Auth helper ──────────────────────────────────────────────────────────────
+// Simple btoa equivalent for Node.js
+function encodePass(plain) {
+  return Buffer.from(plain).toString('base64');
+}
+function decodePass(encoded) {
+  return Buffer.from(encoded, 'base64').toString('utf8');
+}
+
+// ─── Middleware: verify admin token ───────────────────────────────────────────
+function requireAdmin(req, res, next) {
+  const auth = req.headers['authorization'] || '';
+  const token = auth.replace('Bearer ', '');
+  if (token !== encodePass(ADMIN_PASS)) {
+    return res.status(401).json({ error: 'Akses ditolak.' });
+  }
+  next();
+}
+
+// ─── Middleware: verify user session token ────────────────────────────────────
+function requireUser(req, res, next) {
+  const auth = req.headers['authorization'] || '';
+  const token = auth.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Tidak terautentikasi.' });
+  try {
+    // token = base64(NIK:password_hash)
+    const decoded = Buffer.from(token, 'base64').toString('utf8');
+    const colonIdx = decoded.indexOf(':');
+    if (colonIdx === -1) throw new Error('bad token');
+    const nik = decoded.substring(0, colonIdx);
+    const passHash = decoded.substring(colonIdx + 1);
+    const db = readDB();
+    const user = db.users[nik];
+    if (!user || user.active === false || user.password !== passHash) {
+      return res.status(401).json({ error: 'Sesi tidak valid. Silakan login ulang.' });
+    }
+    req.currentUser = { id: nik, ...user };
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: 'Token tidak valid.' });
+  }
+}
+
+// ════════════════════════════════════════
+// ROUTES
+// ════════════════════════════════════════
+
+// Health check
+app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+
+// ─── POST /api/login ──────────────────────────────────────────────────────────
+// Body: { nik, password }
+// Returns: { token, user } or { firstLogin: true } if no password set yet
+app.post('/api/login', loginLimiter, (req, res) => {
+  const { nik, password } = req.body || {};
+  if (!nik) return res.status(400).json({ error: 'NIK wajib diisi.' });
+
+  const db = readDB();
+  const user = db.users[String(nik).trim().toUpperCase()];
+  if (!user || user.active === false) {
+    return res.status(404).json({ error: 'NIK tidak ditemukan atau akses telah dicabut.' });
+  }
+
+  // First login — no password set
+  if (!user.password) {
+    return res.json({ firstLogin: true, name: user.name });
+  }
+
+  if (!password) return res.status(400).json({ error: 'Kata sandi wajib diisi.' });
+
+  if (user.password !== encodePass(password)) {
+    return res.status(401).json({ error: 'Kata sandi salah.' });
+  }
+
+  // Build session token: base64(NIK:passwordHash)
+  const token = Buffer.from(`${String(nik).trim().toUpperCase()}:${user.password}`).toString('base64');
+  res.json({
+    token,
+    user: {
+      id: String(nik).trim().toUpperCase(),
+      name: user.name,
+      position: user.position,
+      store: user.store,
+    }
+  });
+});
+
+// ─── POST /api/set-password ───────────────────────────────────────────────────
+// Body: { nik, password } — for first-time login
+app.post('/api/set-password', loginLimiter, (req, res) => {
+  const { nik, password } = req.body || {};
+  if (!nik || !password) return res.status(400).json({ error: 'NIK dan kata sandi wajib diisi.' });
+  if (password.length < 4) return res.status(400).json({ error: 'Kata sandi minimal 4 karakter.' });
+
+  const nikUpper = String(nik).trim().toUpperCase();
+  const db = readDB();
+  const user = db.users[nikUpper];
+  if (!user || user.active === false) return res.status(404).json({ error: 'NIK tidak ditemukan.' });
+  if (user.password) return res.status(400).json({ error: 'Kata sandi sudah diatur. Gunakan fitur ubah kata sandi.' });
+
+  user.password = encodePass(password);
+  writeDB(db);
+
+  const token = Buffer.from(`${nikUpper}:${user.password}`).toString('base64');
+  res.json({
+    token,
+    user: { id: nikUpper, name: user.name, position: user.position, store: user.store }
+  });
+});
+
+// ─── PUT /api/change-password ─────────────────────────────────────────────────
+// Requires user auth. Body: { oldPassword, newPassword }
+app.put('/api/change-password', requireUser, (req, res) => {
+  const { oldPassword, newPassword } = req.body || {};
+  if (!oldPassword || !newPassword) return res.status(400).json({ error: 'Isi semua field.' });
+  if (newPassword.length < 4) return res.status(400).json({ error: 'Kata sandi minimal 4 karakter.' });
+
+  const db = readDB();
+  const user = db.users[req.currentUser.id];
+  if (user.password !== encodePass(oldPassword)) {
+    return res.status(401).json({ error: 'Kata sandi lama tidak sesuai.' });
+  }
+
+  user.password = encodePass(newPassword);
+  writeDB(db);
+
+  const newToken = Buffer.from(`${req.currentUser.id}:${user.password}`).toString('base64');
+  res.json({ token: newToken });
+});
+
+// ─── GET /api/stories/mine ────────────────────────────────────────────────────
+app.get('/api/stories/mine', requireUser, (req, res) => {
+  const db = readDB();
+  const mine = db.stories.filter(s => s.userId === req.currentUser.id);
+  res.json(mine);
+});
+
+// ─── POST /api/stories ────────────────────────────────────────────────────────
+app.post('/api/stories', requireUser, (req, res) => {
+  const { category, categoryIcon, text } = req.body || {};
+  if (!category || !text || !text.trim()) {
+    return res.status(400).json({ error: 'Kategori dan cerita wajib diisi.' });
+  }
+  if (text.trim().length > 2000) {
+    return res.status(400).json({ error: 'Cerita maksimal 2000 karakter.' });
+  }
+
+  const db = readDB();
+  const ticket = 'IV-' + Date.now().toString(36).toUpperCase();
+  const story = {
+    id: ticket,
+    userId: req.currentUser.id,
+    userNama: req.currentUser.name,
+    userPosisi: req.currentUser.position,
+    userToko: req.currentUser.store,
+    category,
+    categoryIcon: categoryIcon || '',
+    text: text.trim(),
+    time: new Date().toISOString(),
+    reviewed: false,
+  };
+  db.stories.unshift(story);
+  writeDB(db);
+  res.json({ id: ticket });
+});
+
+// ─── ADMIN: GET /api/admin/stories ───────────────────────────────────────────
+app.get('/api/admin/stories', requireAdmin, (req, res) => {
+  const db = readDB();
+  res.json(db.stories);
+});
+
+// ─── ADMIN: PUT /api/admin/stories/:id/reviewed ───────────────────────────────
+app.put('/api/admin/stories/:id/reviewed', requireAdmin, (req, res) => {
+  const db = readDB();
+  const s = db.stories.find(x => x.id === req.params.id);
+  if (!s) return res.status(404).json({ error: 'Cerita tidak ditemukan.' });
+  s.reviewed = true;
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+// ─── ADMIN: DELETE /api/admin/stories/:id ────────────────────────────────────
+app.delete('/api/admin/stories/:id', requireAdmin, (req, res) => {
+  const db = readDB();
+  const before = db.stories.length;
+  db.stories = db.stories.filter(x => x.id !== req.params.id);
+  if (db.stories.length === before) return res.status(404).json({ error: 'Cerita tidak ditemukan.' });
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+// ─── ADMIN: GET /api/admin/users ─────────────────────────────────────────────
+app.get('/api/admin/users', requireAdmin, (req, res) => {
+  const db = readDB();
+  // Never send passwords to client
+  const safe = Object.entries(db.users).map(([id, u]) => ({
+    id, name: u.name, position: u.position, store: u.store,
+    active: u.active !== false,
+    hasPassword: !!u.password,
+  }));
+  res.json(safe);
+});
+
+// ─── ADMIN: POST /api/admin/users ────────────────────────────────────────────
+app.post('/api/admin/users', requireAdmin, (req, res) => {
+  const { id, name, position, store, password } = req.body || {};
+  if (!id || !name) return res.status(400).json({ error: 'NIK dan Nama wajib diisi.' });
+  const nik = String(id).trim().toUpperCase();
+  const db = readDB();
+  if (db.users[nik]) return res.status(409).json({ error: 'NIK sudah terdaftar.' });
+  db.users[nik] = {
+    name: name.trim(),
+    position: (position || '').trim(),
+    store: (store || '').trim(),
+    password: password ? encodePass(password) : null,
+    active: true,
+  };
+  writeDB(db);
+  res.json({ ok: true, id: nik });
+});
+
+// ─── ADMIN: PUT /api/admin/users/:id ─────────────────────────────────────────
+app.put('/api/admin/users/:id', requireAdmin, (req, res) => {
+  const oldId = req.params.id;
+  const { id: newId, name, position, store, password } = req.body || {};
+  const db = readDB();
+  if (!db.users[oldId]) return res.status(404).json({ error: 'Pengguna tidak ditemukan.' });
+  const finalId = newId ? String(newId).trim().toUpperCase() : oldId;
+  if (finalId !== oldId && db.users[finalId]) {
+    return res.status(409).json({ error: 'NIK baru sudah terdaftar.' });
+  }
+  const u = db.users[oldId];
+  if (finalId !== oldId) { db.users[finalId] = u; delete db.users[oldId]; }
+  db.users[finalId].name = (name || u.name).trim();
+  db.users[finalId].position = (position !== undefined ? position : u.position || '').trim();
+  db.users[finalId].store = (store !== undefined ? store : u.store || '').trim();
+  if (password) db.users[finalId].password = encodePass(password);
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+// ─── ADMIN: PUT /api/admin/users/:id/toggle ──────────────────────────────────
+app.put('/api/admin/users/:id/toggle', requireAdmin, (req, res) => {
+  const db = readDB();
+  const u = db.users[req.params.id];
+  if (!u) return res.status(404).json({ error: 'Pengguna tidak ditemukan.' });
+  u.active = !(u.active !== false);
+  writeDB(db);
+  res.json({ ok: true, active: u.active });
+});
+
+// ─── ADMIN: PUT /api/admin/users/:id/reset-password ──────────────────────────
+app.put('/api/admin/users/:id/reset-password', requireAdmin, (req, res) => {
+  const db = readDB();
+  const u = db.users[req.params.id];
+  if (!u) return res.status(404).json({ error: 'Pengguna tidak ditemukan.' });
+  u.password = null;
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+// ─── ADMIN: DELETE /api/admin/users/:id ──────────────────────────────────────
+app.delete('/api/admin/users/:id', requireAdmin, (req, res) => {
+  const db = readDB();
+  if (!db.users[req.params.id]) return res.status(404).json({ error: 'Pengguna tidak ditemukan.' });
+  delete db.users[req.params.id];
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+// ─── ADMIN: POST /api/admin/users/import ─────────────────────────────────────
+app.post('/api/admin/users/import', requireAdmin, (req, res) => {
+  const { users } = req.body || {};
+  if (!Array.isArray(users)) return res.status(400).json({ error: 'Format tidak valid.' });
+  const db = readDB();
+  let added = 0, skipped = 0;
+  users.forEach(u => {
+    const nik = String(u.id || u.nik || '').trim().toUpperCase();
+    const name = String(u.name || u.nama || '').trim();
+    if (!nik || !name) return;
+    if (db.users[nik]) { skipped++; return; }
+    db.users[nik] = { name, position: (u.position || u.posisi || '').trim(), store: (u.store || u.toko || '').trim(), password: null, active: true };
+    added++;
+  });
+  writeDB(db);
+  res.json({ added, skipped });
+});
+
+// ─── Start server ─────────────────────────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`InnerVoice API running on port ${PORT}`);
+  console.log(`DB path: ${DB_PATH}`);
+});
