@@ -16,6 +16,9 @@ const rateLimit = require('express-rate-limit');
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust Render's proxy (required for rate limiting to work correctly)
+app.set('trust proxy', 1);
+
 // ─── Admin password (set via env var in production) ───────────────────────────
 const ADMIN_PASS = process.env.ADMIN_PASS || 'adminonly';
 
