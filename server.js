@@ -104,7 +104,9 @@ function decodePass(encoded) {
 function requireAdmin(req, res, next) {
   const auth = req.headers['authorization'] || '';
   const token = auth.replace('Bearer ', '');
-  if (token !== encodePass(ADMIN_PASS)) {
+  const db = readDB();
+  const storedPass = db.meta && db.meta.adminPass ? db.meta.adminPass : encodePass(ADMIN_PASS);
+  if (token !== storedPass) {
     return res.status(401).json({ error: 'Akses ditolak.' });
   }
   next();
@@ -378,6 +380,24 @@ app.post('/api/admin/users/import', requireAdmin, (req, res) => {
   });
   writeDB(db);
   res.json({ added, skipped });
+});
+
+// ─── ADMIN: Change admin password ────────────────────────────────────────────
+app.put('/api/admin/change-password', requireAdmin, (req, res) => {
+  const { oldPassword, newPassword } = req.body || {};
+  if (!oldPassword || !newPassword) return res.status(400).json({ error: 'Semua field wajib diisi.' });
+  if (newPassword.length < 4) return res.status(400).json({ error: 'Password minimal 4 karakter.' });
+  if (encodePass(oldPassword) !== encodePass(ADMIN_PASS) && oldPassword !== ADMIN_PASS) {
+    return res.status(401).json({ error: 'Password admin saat ini salah.' });
+  }
+  // Store new admin password in DB meta so it persists across deploys
+  const db = readDB();
+  if (!db.meta) db.meta = {};
+  db.meta.adminPass = encodePass(newPassword);
+  writeDB(db);
+  // Update in-memory ADMIN_PASS for current session
+  process.env.ADMIN_PASS = newPassword;
+  res.json({ ok: true });
 });
 
 // ─── ADMIN: Database (Toko & Posisi) ─────────────────────────────────────────

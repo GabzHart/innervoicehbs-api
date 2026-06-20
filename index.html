@@ -97,7 +97,10 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
 .card-sm{padding:16px;border-radius:var(--r)}
 
 /* ─── PAGE STRUCTURE ─── */
-.page-body{flex:1;overflow-y:auto;padding:32px 24px 48px;max-width:720px;width:100%;margin:0 auto}
+.page-body{flex:1;overflow-y:auto;padding:32px 24px 48px;max-width:960px;width:100%;margin:0 auto}
+.home-body{flex:1;overflow-y:auto;padding:24px;max-width:1200px;width:100%;margin:0 auto}
+.home-grid{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
+@media(max-width:900px){.home-grid{grid-template-columns:1fr}.home-grid .home-sidebar{order:2}}
 .page-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--ink);margin-bottom:.3rem}
 .page-sub{font-size:.85rem;color:var(--ink-3);margin-bottom:1.6rem;line-height:1.55}
 .section-title{font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);margin-bottom:.75rem}
@@ -140,17 +143,19 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
 
 /* ─── HOME ─── */
 #s-home{background:var(--paper)}
-.home-hero{background:var(--accent);padding:28px 24px 24px;position:relative;overflow:hidden;flex-shrink:0}
+.home-hero{background:var(--accent);padding:16px 24px;position:relative;overflow:hidden;flex-shrink:0}
 .home-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.06)}
 .home-hero::after{content:'';position:absolute;bottom:-60px;left:40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.04)}
-.home-hero-greeting{font-size:.75rem;font-weight:500;color:rgba(255,255,255,.6);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem}
-.home-hero-name{font-family:'Playfair Display',serif;font-size:1.4rem;color:white;margin-bottom:.15rem}
-.home-hero-info{font-size:.75rem;color:rgba(255,255,255,.55)}
-.home-hero-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:16px;position:relative;z-index:1}
-.home-stat{text-align:center}
-.home-stat-val{font-family:'Playfair Display',serif;font-size:1.5rem;color:white}
-.home-stat-label{font-size:.65rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em}
-.home-stat-divider{width:1px;height:32px;background:rgba(255,255,255,.15)}
+.home-hero-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:1;max-width:1200px;margin:0 auto;width:100%}
+.home-hero-left{}
+.home-hero-greeting{font-size:.68rem;font-weight:500;color:rgba(255,255,255,.6);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2rem}
+.home-hero-name{font-family:'Playfair Display',serif;font-size:1.15rem;color:white;margin-bottom:.1rem}
+.home-hero-info{font-size:.72rem;color:rgba(255,255,255,.55)}
+.home-hero-stats{display:flex;align-items:center;gap:0}
+.home-stat{text-align:center;padding:0 20px}
+.home-stat-val{font-family:'Playfair Display',serif;font-size:1.2rem;color:white}
+.home-stat-label{font-size:.6rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em}
+.home-stat-divider{width:1px;height:28px;background:rgba(255,255,255,.15)}
 
 /* ─── CATEGORY GRID ─── */
 .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.2rem}
@@ -275,13 +280,7 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
 /* ─── RESPONSIVE ─── */
 @media(min-width:768px){
   .login-wrap,.setpass-wrap,.success-wrap{max-width:520px}
-  .cat-grid{grid-template-columns:repeat(4,1fr)}
-  .admin-stats{grid-template-columns:repeat(4,1fr)}
   .modal{max-width:680px}
-}
-@media(min-width:1024px){
-  .login-wrap{max-width:560px}
-  .cat-grid{grid-template-columns:repeat(4,1fr)}
 }
 @media(max-width:600px){
   .cat-grid{grid-template-columns:1fr 1fr}
@@ -292,6 +291,7 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
   .cat-bar-label{width:110px}
   .modal-footer{flex-direction:column}
   .modal-footer .btn{width:100%}
+  .home-hero-stats{display:none}
 }
 @media(max-width:400px){
   .admin-tab{padding:12px 10px;font-size:.72rem}
@@ -536,45 +536,55 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
     </div>
   </div>
   <div class="home-hero">
-    <div class="home-hero-greeting">Selamat datang kembali</div>
-    <div class="home-hero-name" id="home-name">—</div>
-    <div class="home-hero-info" id="home-info">—</div>
-    <div class="home-hero-bottom">
-      <div class="home-stat">
-        <div class="home-stat-val" id="home-stat-stories">0</div>
-        <div class="home-stat-label">Cerita Saya</div>
+    <div class="home-hero-inner">
+      <div class="home-hero-left">
+        <div class="home-hero-greeting">Selamat datang kembali</div>
+        <div class="home-hero-name" id="home-name">—</div>
+        <div class="home-hero-info" id="home-info">—</div>
       </div>
-      <div class="home-stat-divider"></div>
-      <div class="home-stat">
-        <div class="home-stat-val" id="home-stat-date">—</div>
-        <div class="home-stat-label">Hari Ini</div>
-      </div>
-      <div class="home-stat-divider"></div>
-      <div class="home-stat">
-        <div class="home-stat-val">✓</div>
-        <div class="home-stat-label">Terverifikasi</div>
+      <div class="home-hero-stats">
+        <div class="home-stat">
+          <div class="home-stat-val" id="home-stat-stories">0</div>
+          <div class="home-stat-label">Cerita Saya</div>
+        </div>
+        <div class="home-stat-divider"></div>
+        <div class="home-stat">
+          <div class="home-stat-val" id="home-stat-date">—</div>
+          <div class="home-stat-label">Hari Ini</div>
+        </div>
+        <div class="home-stat-divider"></div>
+        <div class="home-stat">
+          <div class="home-stat-val">✓</div>
+          <div class="home-stat-label">Terverifikasi</div>
+        </div>
       </div>
     </div>
   </div>
-  <div style="flex:1;overflow-y:auto;padding:24px 20px 40px;max-width:720px;width:100%;margin:0 auto">
-    <div class="anim-up">
-      <div class="section-title">Bagikan Cerita</div>
-      <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1.2rem;line-height:1.55">Pilih kategori yang paling sesuai, lalu bagikan apa yang ada di pikiran Anda. Kiriman bersifat rahasia.</p>
-    </div>
-    <div class="cat-grid anim-up-1" id="cat-grid"></div>
-    <div class="form-group anim-up-2" id="other-cat-group" style="display:none">
-      <label class="form-label">Tentukan Kategori <span class="req">*</span></label>
-      <input type="text" class="form-input" id="other-cat-input" placeholder="Jelaskan kategori Anda…" maxlength="60">
-      <div class="form-err" id="other-cat-err">Harap tentukan kategorinya.</div>
-    </div>
-    <div class="form-err anim-up-2" id="cat-err" style="display:none">Harap pilih kategori terlebih dahulu.</div>
-    <button class="btn btn-primary btn-full anim-up-3" onclick="goToStory()" style="margin-top:.5rem">
-      Lanjut ke Cerita
-      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
-    <div style="margin-top:2rem" class="anim-up-4">
-      <div class="section-title">Kiriman Saya</div>
-      <div id="my-stories-list"></div>
+  <div class="home-body">
+    <div class="home-grid">
+      <!-- Main: category picker -->
+      <div>
+        <div class="anim-up">
+          <div class="section-title">Bagikan Cerita</div>
+          <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1.2rem;line-height:1.55">Pilih kategori yang paling sesuai, lalu bagikan apa yang ada di pikiran Anda. Kiriman bersifat rahasia.</p>
+        </div>
+        <div class="cat-grid anim-up-1" id="cat-grid"></div>
+        <div class="form-group anim-up-2" id="other-cat-group" style="display:none">
+          <label class="form-label">Tentukan Kategori <span class="req">*</span></label>
+          <input type="text" class="form-input" id="other-cat-input" placeholder="Jelaskan kategori Anda…" maxlength="60">
+          <div class="form-err" id="other-cat-err">Harap tentukan kategorinya.</div>
+        </div>
+        <div class="form-err anim-up-2" id="cat-err" style="display:none">Harap pilih kategori terlebih dahulu.</div>
+        <button class="btn btn-primary btn-full anim-up-3" onclick="goToStory()" style="margin-top:.5rem">
+          Lanjut ke Cerita
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <!-- Sidebar: past stories -->
+      <div class="home-sidebar anim-up-4">
+        <div class="section-title">Kiriman Saya</div>
+        <div id="my-stories-list"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -698,6 +708,7 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
   <div class="admin-topbar">
     <div class="admin-topbar-brand"><strong>INNERVOICE</strong> — ADMIN</div>
     <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-secondary btn-sm" onclick="openChangeAdminPass()" style="font-size:.72rem">Ubah Password Admin</button>
       <button class="btn btn-secondary btn-sm" onclick="exitAdmin()" style="font-size:.72rem">Keluar Admin</button>
     </div>
   </div>
@@ -879,6 +890,44 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
     </div>
   </div>
 </div>
+<!-- ══ CHANGE ADMIN PASSWORD MODAL ══ -->
+<div class="modal-overlay" id="admin-cp-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header"><div class="modal-title">Ubah Password Admin</div></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Password Admin Saat Ini</label>
+        <div class="pw-wrap">
+          <input type="password" class="form-input" id="acp-old" placeholder="Password saat ini…" maxlength="60">
+          <button class="pw-eye" onclick="togglePw('acp-old',this)">👁</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password Admin Baru</label>
+        <div class="pw-wrap">
+          <input type="password" class="form-input" id="acp-new" placeholder="Min. 4 karakter…" maxlength="60">
+          <button class="pw-eye" onclick="togglePw('acp-new',this)">👁</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Konfirmasi Password Baru</label>
+        <div class="pw-wrap">
+          <input type="password" class="form-input" id="acp-new2" placeholder="Ulangi password baru…" maxlength="60">
+          <button class="pw-eye" onclick="togglePw('acp-new2',this)">👁</button>
+        </div>
+        <div class="form-err" id="acp-err">Periksa kembali password Anda.</div>
+      </div>
+      <div style="background:var(--gold-light);border:1px solid rgba(184,134,11,.2);border-radius:var(--r);padding:10px 14px;font-size:.78rem;color:var(--gold);line-height:1.5">
+        ⚠️ Setelah diubah, Anda perlu login ulang ke admin dengan password baru.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('admin-cp-modal')">Batal</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveAdminPass()">Simpan Password</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
   <span id="toast-msg"></span>
@@ -1642,6 +1691,36 @@ function toast(msg,type){
   toastTimer=setTimeout(function(){el.classList.remove('show');},3200);
 }
 
+
+function openChangeAdminPass() {
+  ['acp-old','acp-new','acp-new2'].forEach(function(id){ document.getElementById(id).value=''; document.getElementById(id).classList.remove('error'); });
+  document.getElementById('acp-err').style.display='none';
+  openModal('admin-cp-modal');
+  setTimeout(function(){ document.getElementById('acp-old').focus(); },100);
+}
+
+async function saveAdminPass() {
+  var oldP  = document.getElementById('acp-old').value;
+  var newP  = document.getElementById('acp-new').value;
+  var newP2 = document.getElementById('acp-new2').value;
+  var err   = document.getElementById('acp-err');
+  err.style.display='none';
+  if (btoa(oldP) !== adminToken) {
+    err.textContent='Password admin saat ini salah.'; err.style.display='block';
+    document.getElementById('acp-old').classList.add('error'); return;
+  }
+  if (newP.length < 4 || newP !== newP2) {
+    err.textContent='Password baru tidak cocok atau terlalu pendek (min. 4 karakter).'; err.style.display='block';
+    document.getElementById('acp-new').classList.add('error');
+    document.getElementById('acp-new2').classList.add('error'); return;
+  }
+  try {
+    await api('PUT', '/api/admin/change-password', { oldPassword: oldP, newPassword: newP }, adminToken);
+    adminToken = btoa(newP);
+    closeModal('admin-cp-modal');
+    toast('Password admin berhasil diubah!', 'success');
+  } catch(e) { err.textContent=e.message; err.style.display='block'; }
+}
 
 // ════════════════════════════════════════
 // DATABASE TAB (Toko & Posisi)
