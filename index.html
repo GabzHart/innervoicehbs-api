@@ -250,6 +250,22 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
 .success-sub{font-size:.85rem;color:var(--ink-3);line-height:1.6;margin-bottom:.4rem}
 .success-ticket{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--ink-4);margin-bottom:1.8rem}
 
+/* ─── BULK ADD TABLE ─── */
+.bulk-table{width:100%;border-collapse:collapse}
+.bulk-table th{font-size:.68rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4);padding:8px 10px;background:var(--paper-2);border-bottom:1px solid var(--line);text-align:left}
+.bulk-table td{padding:6px 6px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+.bulk-table tr:last-child td{border-bottom:none}
+.bulk-table .form-input,.bulk-table .form-select{padding:7px 10px;font-size:.82rem;border-radius:7px}
+.bulk-table .form-select{padding-right:28px;background-position:right 8px center}
+/* ─── DATABASE PANEL ─── */
+.db-subtabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:16px}
+.db-subtab{padding:10px 18px;font-size:.8rem;font-weight:600;color:var(--ink-4);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all var(--transition);font-family:'IBM Plex Sans',sans-serif}
+.db-subtab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.db-item-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:white;border:1px solid var(--line);border-radius:var(--r);margin-bottom:6px;gap:10px}
+.db-item-name{font-size:.85rem;color:var(--ink-2);flex:1}
+.db-item-meta{font-size:.72rem;color:var(--ink-4)}
+.db-add-row{display:flex;gap:8px;margin-bottom:12px}
+
 /* ─── SCROLLBAR ─── */
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -690,6 +706,7 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
       Cerita <span class="admin-tab-badge" id="unread-badge" style="display:none">0</span>
     </button>
     <button class="admin-tab" id="atab-users" onclick="adminTab('users')">Pengguna</button>
+    <button class="admin-tab" id="atab-database" onclick="adminTab('database')">Database</button>
   </div>
   <div style="flex:1;overflow-y:auto;padding:20px;max-width:1100px;width:100%;margin:0 auto">
 
@@ -743,9 +760,9 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <input type="text" id="user-search-input" class="form-input" placeholder="Cari NIK, nama, posisi…" style="width:200px;padding:8px 12px;font-size:.82rem" oninput="renderPengguna()">
-          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file-input').click()">
-            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            Import Excel
+          <button class="btn btn-secondary btn-sm" onclick="openBulkAdd()">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tambah Banyak
           </button>
           <button class="btn btn-secondary btn-sm" onclick="exportUsers()">
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -775,10 +792,93 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
         </table>
       </div>
     </div>
+    <!-- Database Panel -->
+    <div class="admin-panel" id="apanel-database">
+      <div class="db-subtabs">
+        <button class="db-subtab active" id="dbtab-toko" onclick="dbTab('toko')">Toko</button>
+        <button class="db-subtab" id="dbtab-posisi" onclick="dbTab('posisi')">Posisi</button>
+      </div>
+      <!-- Toko sub-panel -->
+      <div id="dbpanel-toko">
+        <div class="db-add-row">
+          <input type="text" class="form-input" id="new-toko-input" placeholder="Nama toko baru…" maxlength="80" style="flex:1"
+            onkeydown="if(event.key==='Enter') addDbItem('toko')">
+          <button class="btn btn-primary btn-sm" onclick="addDbItem('toko')">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tambah Toko
+          </button>
+        </div>
+        <div id="toko-list"></div>
+      </div>
+      <!-- Posisi sub-panel -->
+      <div id="dbpanel-posisi" style="display:none">
+        <div class="db-add-row">
+          <input type="text" class="form-input" id="new-posisi-input" placeholder="Nama posisi baru…" maxlength="80" style="flex:1"
+            onkeydown="if(event.key==='Enter') addDbItem('posisi')">
+          <button class="btn btn-primary btn-sm" onclick="addDbItem('posisi')">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tambah Posisi
+          </button>
+        </div>
+        <div id="posisi-list"></div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- TOAST -->
+<!-- ══ BULK ADD USERS MODAL ══ -->
+<div class="modal-overlay" id="bulk-modal" style="padding:16px">
+  <div class="modal" style="max-width:900px;width:100%">
+    <div class="modal-header">
+      <div class="modal-title">Tambah Banyak Pengguna</div>
+      <div style="font-size:.78rem;color:var(--ink-4);margin-top:4px">Isi tabel di bawah. Toko & posisi baru akan otomatis ditambahkan ke database.</div>
+    </div>
+    <div class="modal-body" style="padding:12px 16px;overflow-x:auto">
+      <table class="bulk-table" id="bulk-table">
+        <thead>
+          <tr>
+            <th style="width:120px">NIK <span style="color:var(--red)">*</span></th>
+            <th>Nama Lengkap <span style="color:var(--red)">*</span></th>
+            <th style="width:180px">Posisi <span style="color:var(--red)">*</span></th>
+            <th style="width:200px">Toko</th>
+            <th style="width:36px"></th>
+          </tr>
+        </thead>
+        <tbody id="bulk-tbody"></tbody>
+      </table>
+      <button class="btn btn-secondary btn-sm" onclick="addBulkRow()" style="margin-top:10px">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Tambah Baris
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('bulk-modal')">Batal</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveBulkUsers()" id="bulk-save-btn">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        Simpan Semua
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EDIT DB ITEM MODAL ══ -->
+<div class="modal-overlay" id="dbedit-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header"><div class="modal-title" id="dbedit-title">Edit</div></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" id="dbedit-label">Nama</label>
+        <input type="text" class="form-input" id="dbedit-input" maxlength="80"
+          onkeydown="if(event.key==='Enter') saveDbEdit()">
+        <div class="form-err" id="dbedit-err">Nama wajib diisi.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('dbedit-modal')">Batal</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveDbEdit()">Simpan</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
   <span id="toast-msg"></span>
@@ -1143,6 +1243,7 @@ function adminTab(tab) {
   document.getElementById('apanel-' + tab).classList.add('active');
   if (tab === 'stories') renderCerita();
   if (tab === 'users') renderPengguna();
+  if (tab === 'database') renderDatabase();
 }
 
 // ════════════════════════════════════════
@@ -1539,6 +1640,171 @@ function toast(msg,type){
   el.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer=setTimeout(function(){el.classList.remove('show');},3200);
+}
+
+
+// ════════════════════════════════════════
+// DATABASE TAB (Toko & Posisi)
+// ════════════════════════════════════════
+var currentDbType = 'toko';
+var editingDbOld = null;
+
+function dbTab(type) {
+  currentDbType = type;
+  document.querySelectorAll('.db-subtab').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById('dbtab-' + type).classList.add('active');
+  document.getElementById('dbpanel-toko').style.display = type === 'toko' ? 'block' : 'none';
+  document.getElementById('dbpanel-posisi').style.display = type === 'posisi' ? 'block' : 'none';
+  renderDbList(type);
+}
+
+async function renderDatabase() { dbTab('toko'); }
+
+async function renderDbList(type) {
+  var listEl = document.getElementById(type + '-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="color:var(--ink-4);font-size:.82rem;padding:12px">Memuat…</div>';
+  try {
+    var users = await api('GET', '/api/admin/users', null, adminToken);
+    var extras = [];
+    try { var dbData = await api('GET','/api/admin/database',null,adminToken); extras = dbData[type]||[]; } catch(e){}
+    var fromUsers = users.map(function(u){ return (type==='toko'?(u.store||''):(u.position||'')).trim(); }).filter(Boolean);
+    var items = Array.from(new Set(fromUsers.concat(extras))).sort();
+    if (items.length === 0) { listEl.innerHTML = '<div style="color:var(--ink-4);font-size:.82rem;padding:12px">Belum ada data.</div>'; return; }
+    listEl.innerHTML = items.map(function(item) {
+      var count = users.filter(function(u){ return ((type==='toko'?u.store:u.position)||'').trim() === item; }).length;
+      return '<div class="db-item-row">'
+        + '<span class="db-item-name">' + escH(item) + '</span>'
+        + '<span class="db-item-meta">' + count + ' karyawan</span>'
+        + '<div style="display:flex;gap:6px">'
+        + '<button class="btn btn-secondary btn-xs" data-dbtype="'+escH(type)+'" data-dbval="'+escH(item)+'" data-action="edit">Edit</button>'
+        + '<button class="btn btn-danger btn-xs" data-dbtype="'+escH(type)+'" data-dbval="'+escH(item)+'" data-action="del">Hapus</button>'
+        + '</div></div>';
+    }).join('');
+    listEl.onclick = function(e) {
+      var btn = e.target.closest('[data-action]'); if(!btn) return;
+      var t = btn.getAttribute('data-dbtype'), v = btn.getAttribute('data-dbval');
+      if (btn.getAttribute('data-action')==='edit') openDbEdit(t,v);
+      else deleteDbItem(t,v);
+    };
+  } catch(e) { listEl.innerHTML = '<div style="color:var(--red);font-size:.82rem;padding:12px">'+escH(e.message)+'</div>'; }
+}
+
+async function addDbItem(type) {
+  var val = document.getElementById('new-'+type+'-input').value.trim();
+  if (!val) { toast('Nama '+(type==='toko'?'toko':'posisi')+' wajib diisi.','err'); return; }
+  try {
+    await api('POST','/api/admin/database',{type,value:val},adminToken);
+    document.getElementById('new-'+type+'-input').value='';
+    renderDbList(type);
+    toast((type==='toko'?'Toko':'Posisi')+' berhasil ditambahkan.','success');
+  } catch(e){ toast(e.message,'err'); }
+}
+
+function openDbEdit(type,oldVal) {
+  editingDbOld={type,value:oldVal};
+  document.getElementById('dbedit-title').textContent='Edit '+(type==='toko'?'Toko':'Posisi');
+  document.getElementById('dbedit-label').textContent=(type==='toko'?'Nama Toko':'Nama Posisi');
+  document.getElementById('dbedit-input').value=oldVal;
+  document.getElementById('dbedit-err').style.display='none';
+  openModal('dbedit-modal');
+  setTimeout(function(){document.getElementById('dbedit-input').focus();},100);
+}
+
+async function saveDbEdit() {
+  var newVal=document.getElementById('dbedit-input').value.trim();
+  if(!newVal){document.getElementById('dbedit-err').style.display='block';return;}
+  document.getElementById('dbedit-err').style.display='none';
+  if(!editingDbOld) return;
+  try {
+    await api('PUT','/api/admin/database',{type:editingDbOld.type,oldValue:editingDbOld.value,newValue:newVal},adminToken);
+    closeModal('dbedit-modal');
+    renderDbList(editingDbOld.type);
+    if(document.getElementById('apanel-users').classList.contains('active')) renderPengguna();
+    toast('Berhasil. Semua karyawan dengan '+(editingDbOld.type==='toko'?'toko':'posisi')+' lama sudah diperbarui.','success');
+  } catch(e){toast(e.message,'err');}
+}
+
+async function deleteDbItem(type,val) {
+  if(!confirm('Hapus "'+val+'"?\nKaryawan yang menggunakan '+type+' ini akan dikosongkan datanya.')) return;
+  try {
+    await api('DELETE','/api/admin/database',{type,value:val},adminToken);
+    renderDbList(type);
+    toast(val+' berhasil dihapus.','success');
+  } catch(e){toast(e.message,'err');}
+}
+
+// ════════════════════════════════════════
+// BULK ADD USERS
+// ════════════════════════════════════════
+var bulkRowCount=0;
+
+async function openBulkAdd() {
+  bulkRowCount=0;
+  document.getElementById('bulk-tbody').innerHTML='';
+  addBulkRow(); addBulkRow(); addBulkRow();
+  openModal('bulk-modal');
+}
+
+async function addBulkRow() {
+  var tbody=document.getElementById('bulk-tbody');
+  bulkRowCount++;
+  var idx=bulkRowCount;
+  var tokoList=[],posisiList=[];
+  try {
+    var users=cachedUsers.length?cachedUsers:await api('GET','/api/admin/users',null,adminToken);
+    tokoList=Array.from(new Set(users.map(function(u){return(u.store||'').trim();}).filter(Boolean))).sort();
+    posisiList=Array.from(new Set(users.map(function(u){return(u.position||'').trim();}).filter(Boolean))).sort();
+    try { var dbData=await api('GET','/api/admin/database',null,adminToken);
+      if(dbData.toko) tokoList=Array.from(new Set(tokoList.concat(dbData.toko))).sort();
+      if(dbData.posisi) posisiList=Array.from(new Set(posisiList.concat(dbData.posisi))).sort();
+    } catch(e){}
+  } catch(e){}
+  var tr=document.createElement('tr'); tr.id='bulk-row-'+idx;
+  tr.innerHTML='<td><input type="text" class="form-input" id="bnik-'+idx+'" placeholder="NIK" maxlength="20" oninput="this.value=this.value.toUpperCase()"></td>'
+    +'<td><input type="text" class="form-input" id="bname-'+idx+'" placeholder="Nama lengkap" maxlength="80"></td>'
+    +'<td><input type="text" class="form-input" id="bpos-'+idx+'" placeholder="Posisi…" maxlength="80" list="pl-'+idx+'">'
+    +'<datalist id="pl-'+idx+'">'+posisiList.map(function(p){return'<option value="'+escH(p)+'">';}).join('')+'</datalist></td>'
+    +'<td><input type="text" class="form-input" id="btoko-'+idx+'" placeholder="Toko…" maxlength="80" list="tl-'+idx+'">'
+    +'<datalist id="tl-'+idx+'">'+tokoList.map(function(t){return'<option value="'+escH(t)+'">';}).join('')+'</datalist></td>'
+    +'<td><button class="btn btn-danger btn-xs" onclick="this.closest(\'tr\').remove()" title="Hapus baris">'
+    +'<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+    +'</button></td>';
+  tbody.appendChild(tr);
+}
+
+async function saveBulkUsers() {
+  var rows=document.getElementById('bulk-tbody').querySelectorAll('tr');
+  var toSave=[]; var hasError=false;
+  rows.forEach(function(row){
+    var id=row.id.replace('bulk-row-','');
+    var nik=(document.getElementById('bnik-'+id)||{value:''}).value.trim().toUpperCase();
+    var name=(document.getElementById('bname-'+id)||{value:''}).value.trim();
+    var pos=(document.getElementById('bpos-'+id)||{value:''}).value.trim();
+    var toko=(document.getElementById('btoko-'+id)||{value:''}).value.trim();
+    if(!nik&&!name) return;
+    var rowErr=false;
+    if(!nik){document.getElementById('bnik-'+id).classList.add('error');rowErr=true;}
+    else document.getElementById('bnik-'+id).classList.remove('error');
+    if(!name){document.getElementById('bname-'+id).classList.add('error');rowErr=true;}
+    else document.getElementById('bname-'+id).classList.remove('error');
+    if(!pos){document.getElementById('bpos-'+id).classList.add('error');rowErr=true;}
+    else document.getElementById('bpos-'+id).classList.remove('error');
+    if(rowErr){hasError=true;return;}
+    toSave.push({id:nik,name,position:pos,store:toko});
+  });
+  if(hasError){toast('Harap isi NIK, Nama, dan Posisi untuk setiap baris.','err');return;}
+  if(toSave.length===0){toast('Tidak ada data untuk disimpan.','err');return;}
+  var btn=document.getElementById('bulk-save-btn');
+  btn.classList.add('btn-loading'); btn.disabled=true;
+  try {
+    var res=await api('POST','/api/admin/users/import',{users:toSave},adminToken);
+    closeModal('bulk-modal');
+    await renderPengguna();
+    if(document.getElementById('apanel-database').classList.contains('active')) renderDatabase();
+    toast('Berhasil: '+res.added+' ditambahkan'+(res.skipped>0?', '+res.skipped+' dilewati (NIK duplikat)':'')+'.','success');
+  } catch(e){toast(e.message,'err');}
+  finally{btn.classList.remove('btn-loading');btn.disabled=false;}
 }
 
 document.addEventListener('DOMContentLoaded',function(){

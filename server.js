@@ -380,6 +380,65 @@ app.post('/api/admin/users/import', requireAdmin, (req, res) => {
   res.json({ added, skipped });
 });
 
+// ─── ADMIN: Database (Toko & Posisi) ─────────────────────────────────────────
+// DB stores a `meta` object: { toko: [...], posisi: [...] }
+
+app.get('/api/admin/database', requireAdmin, (req, res) => {
+  const db = readDB();
+  res.json(db.meta || { toko: [], posisi: [] });
+});
+
+app.post('/api/admin/database', requireAdmin, (req, res) => {
+  const { type, value } = req.body || {};
+  if (!type || !value) return res.status(400).json({ error: 'type dan value wajib diisi.' });
+  if (!['toko','posisi'].includes(type)) return res.status(400).json({ error: 'type tidak valid.' });
+  const db = readDB();
+  if (!db.meta) db.meta = { toko: [], posisi: [] };
+  if (!db.meta[type]) db.meta[type] = [];
+  if (db.meta[type].includes(value)) return res.status(409).json({ error: 'Sudah ada di database.' });
+  db.meta[type].push(value);
+  db.meta[type].sort();
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+app.put('/api/admin/database', requireAdmin, (req, res) => {
+  const { type, oldValue, newValue } = req.body || {};
+  if (!type || !oldValue || !newValue) return res.status(400).json({ error: 'Semua field wajib diisi.' });
+  if (!['toko','posisi'].includes(type)) return res.status(400).json({ error: 'type tidak valid.' });
+  const db = readDB();
+  if (!db.meta) db.meta = { toko: [], posisi: [] };
+  // Update meta list
+  if (db.meta[type]) {
+    db.meta[type] = db.meta[type].filter(v => v !== oldValue);
+    if (!db.meta[type].includes(newValue)) db.meta[type].push(newValue);
+    db.meta[type].sort();
+  }
+  // Update all users that use this value
+  const field = type === 'toko' ? 'store' : 'position';
+  Object.values(db.users).forEach(u => {
+    if ((u[field] || '').trim() === oldValue) u[field] = newValue;
+  });
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/database', requireAdmin, (req, res) => {
+  const { type, value } = req.body || {};
+  if (!type || !value) return res.status(400).json({ error: 'type dan value wajib diisi.' });
+  if (!['toko','posisi'].includes(type)) return res.status(400).json({ error: 'type tidak valid.' });
+  const db = readDB();
+  if (!db.meta) db.meta = { toko: [], posisi: [] };
+  if (db.meta[type]) db.meta[type] = db.meta[type].filter(v => v !== value);
+  // Clear from users
+  const field = type === 'toko' ? 'store' : 'position';
+  Object.values(db.users).forEach(u => {
+    if ((u[field] || '').trim() === value) u[field] = '';
+  });
+  writeDB(db);
+  res.json({ ok: true });
+});
+
 // ─── Serve frontend ───────────────────────────────────────────────────────────
 const FRONTEND = path.join(__dirname, 'index.html');
 app.get('/', (req, res) => {
