@@ -380,6 +380,13 @@ app.post('/api/admin/users/import', requireAdmin, (req, res) => {
   res.json({ added, skipped });
 });
 
+// ─── Serve frontend ───────────────────────────────────────────────────────────
+const FRONTEND = path.join(__dirname, 'index.html');
+app.get('/', (req, res) => {
+  if (fs.existsSync(FRONTEND)) res.sendFile(FRONTEND);
+  else res.json({ ok: true, message: 'InnerVoice API is running.' });
+});
+
 // ─── Start server ─────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`InnerVoice API running on port ${PORT}`);

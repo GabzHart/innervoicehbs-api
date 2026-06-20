@@ -1,0 +1,1550 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InnerVoice — Pengumpul Cerita</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0f0f0f;--ink-2:#2a2a2a;--ink-3:#555;--ink-4:#888;
+  --line:#e2e2e2;--line-2:#f0f0f0;
+  --paper:#fafaf8;--paper-2:#f3f3f0;
+  --accent:#1a3a2a;--accent-2:#2d5c42;--accent-light:#e8f0eb;--accent-mid:#4a8c6a;
+  --red:#c0392b;--red-light:#fdf0ef;
+  --gold:#b8860b;--gold-light:#fdf8e8;
+  --blue:#1a5276;--blue-light:#eaf4fb;
+  --r:10px;--r-lg:16px;
+  --shadow:0 2px 16px rgba(0,0,0,.08);--shadow-lg:0 8px 40px rgba(0,0,0,.12);
+  --transition:.25s cubic-bezier(.16,1,.3,1);
+}
+html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--paper);color:var(--ink);overflow:hidden}
+
+/* ─── BACKGROUND ─── */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(var(--line-2) 1px,transparent 1px),linear-gradient(90deg,var(--line-2) 1px,transparent 1px);background-size:48px 48px;opacity:.6}
+.bg-blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:.12}
+.bg-blob-1{width:600px;height:600px;background:var(--accent-mid);top:-200px;right:-200px;animation:floatBg 12s ease-in-out infinite}
+.bg-blob-2{width:400px;height:400px;background:#3498db;bottom:-100px;left:-100px;animation:floatBg 16s ease-in-out infinite reverse}
+
+/* ─── SCREEN SYSTEM ─── */
+.screen{position:fixed;inset:0;z-index:10;display:none;flex-direction:column;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;opacity:0}
+.screen.active{display:flex;opacity:1}
+.screen.entering{animation:screenEnter .38s cubic-bezier(.2,0,.2,1) both}
+.screen.leaving{animation:screenLeave .28s cubic-bezier(.4,0,1,1) both;pointer-events:none}
+@keyframes screenEnter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes screenLeave{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-8px)}}
+
+/* ─── TOPBAR ─── */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(250,250,248,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.topbar-logo{width:32px;height:32px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.topbar-logo svg{width:16px;height:16px;fill:none;stroke:white;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.topbar-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--ink)}
+.topbar-name span{color:var(--accent-mid);font-style:italic}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-user{font-size:.75rem;color:var(--ink-3);font-weight:500}
+.topbar-user strong{color:var(--ink);font-weight:600}
+
+/* ─── BUTTONS ─── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:var(--r);border:none;font-family:'IBM Plex Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:all var(--transition);text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--accent);color:white}
+.btn-primary:hover{background:var(--accent-2);transform:translateY(-2px) scale(1.01);box-shadow:0 6px 24px rgba(26,58,42,.35)}
+.btn-primary:active{transform:translateY(0) scale(.99)}
+.btn-secondary{background:white;color:var(--ink);border:1.5px solid var(--line)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.btn-danger{background:var(--red-light);color:var(--red);border:1px solid rgba(192,57,43,.2)}
+.btn-danger:hover{background:var(--red);color:white}
+.btn-gold{background:var(--gold-light);color:var(--gold);border:1px solid rgba(184,134,11,.2)}
+.btn-gold:hover{background:var(--gold);color:white}
+.btn-sm{padding:8px 16px;font-size:.78rem}
+.btn-xs{padding:5px 10px;font-size:.72rem}
+.btn-full{width:100%;justify-content:center}
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn-icon{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:white;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--transition);color:var(--ink-3)}
+.btn-icon:hover{background:var(--accent);border-color:var(--accent);color:white}
+.btn-icon svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn-loading{position:relative;pointer-events:none;opacity:.8}
+.btn-loading::after{content:'';width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;margin-left:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── FORM ELEMENTS ─── */
+.form-group{margin-bottom:1.1rem}
+.form-label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.45rem}
+.form-label .req{color:var(--red)}
+.form-input,.form-select,.form-textarea{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:var(--r);font-family:'IBM Plex Sans',sans-serif;font-size:.9rem;color:var(--ink);background:white;outline:none;transition:border-color var(--transition),box-shadow var(--transition)}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,58,42,.1)}
+.form-input.error,.form-select.error,.form-textarea.error{border-color:var(--red);box-shadow:0 0 0 3px rgba(192,57,43,.1)}
+.form-textarea{resize:vertical;min-height:120px;line-height:1.6}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.form-err{font-size:.75rem;color:var(--red);margin-top:.4rem;display:none}
+.pw-wrap{position:relative}
+.pw-wrap .form-input{padding-right:42px}
+.pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-4);font-size:.85rem;padding:4px;line-height:1}
+
+/* ─── PASSWORD STRENGTH ─── */
+.pw-strength{display:flex;gap:4px;margin-top:6px;align-items:center}
+.pw-strength-bar{height:4px;flex:1;border-radius:2px;background:var(--line);transition:background .3s}
+.pw-strength-label{font-size:.68rem;color:var(--ink-4);min-width:48px;text-align:right}
+.pw-strength-bar.weak{background:#e74c3c}
+.pw-strength-bar.medium{background:#f39c12}
+.pw-strength-bar.strong{background:var(--accent-mid)}
+
+/* ─── CARDS ─── */
+.card{background:white;border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;box-shadow:var(--shadow)}
+.card-sm{padding:16px;border-radius:var(--r)}
+
+/* ─── PAGE STRUCTURE ─── */
+.page-body{flex:1;overflow-y:auto;padding:32px 24px 48px;max-width:520px;width:100%;margin:0 auto}
+.page-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--ink);margin-bottom:.3rem}
+.page-sub{font-size:.85rem;color:var(--ink-3);margin-bottom:1.6rem;line-height:1.55}
+.section-title{font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);margin-bottom:.75rem}
+.divider{height:1px;background:var(--line);margin:1.4rem 0}
+
+/* ─── BADGE ─── */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:.68rem;font-weight:600;letter-spacing:.04em}
+.badge-green{background:var(--accent-light);color:var(--accent)}
+.badge-red{background:var(--red-light);color:var(--red)}
+.badge-gold{background:var(--gold-light);color:var(--gold)}
+.badge-gray{background:var(--line-2);color:var(--ink-3)}
+.badge-blue{background:var(--blue-light);color:var(--blue)}
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes floatBg{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.04)}}
+.anim-up{animation:fadeSlideUp .5s cubic-bezier(.16,1,.3,1) both}
+.anim-up-1{animation:fadeSlideUp .5s .06s cubic-bezier(.16,1,.3,1) both}
+.anim-up-2{animation:fadeSlideUp .5s .12s cubic-bezier(.16,1,.3,1) both}
+.anim-up-3{animation:fadeSlideUp .5s .18s cubic-bezier(.16,1,.3,1) both}
+.anim-up-4{animation:fadeSlideUp .5s .24s cubic-bezier(.16,1,.3,1) both}
+.anim-scale{animation:scaleIn .42s cubic-bezier(.16,1,.3,1) both}
+
+/* ─── LOGIN SCREEN ─── */
+#s-login{background:var(--paper);align-items:center;justify-content:center;padding:24px;position:relative}
+.login-wrap{width:100%;max-width:400px}
+.login-header{text-align:center;margin-bottom:2rem}
+.login-logo{width:56px;height:56px;border-radius:16px;background:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 8px 24px rgba(26,58,42,.25);animation:fadeSlideUp .6s cubic-bezier(.16,1,.3,1) both}
+.login-logo svg{width:26px;height:26px;fill:none;stroke:white;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.login-title{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--ink);margin-bottom:.3rem}
+.login-sub{font-size:.83rem;color:var(--ink-3)}
+.login-first-badge{background:var(--gold-light);border:1px solid rgba(184,134,11,.2);border-radius:var(--r);padding:10px 14px;margin-bottom:1rem;font-size:.78rem;color:var(--gold);line-height:1.5;display:none}
+
+/* ─── SET PASSWORD ─── */
+#s-setpass{background:var(--paper);align-items:center;justify-content:center;padding:24px}
+.setpass-wrap{width:100%;max-width:400px}
+
+/* ─── HOME ─── */
+#s-home{background:var(--paper)}
+.home-hero{background:var(--accent);padding:28px 24px 24px;position:relative;overflow:hidden;flex-shrink:0}
+.home-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.06)}
+.home-hero::after{content:'';position:absolute;bottom:-60px;left:40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.04)}
+.home-hero-greeting{font-size:.75rem;font-weight:500;color:rgba(255,255,255,.6);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem}
+.home-hero-name{font-family:'Playfair Display',serif;font-size:1.4rem;color:white;margin-bottom:.15rem}
+.home-hero-info{font-size:.75rem;color:rgba(255,255,255,.55)}
+.home-hero-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:16px;position:relative;z-index:1}
+.home-stat{text-align:center}
+.home-stat-val{font-family:'Playfair Display',serif;font-size:1.5rem;color:white}
+.home-stat-label{font-size:.65rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em}
+.home-stat-divider{width:1px;height:32px;background:rgba(255,255,255,.15)}
+
+/* ─── CATEGORY GRID ─── */
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.2rem}
+.cat-card{background:white;border:1.5px solid var(--line);border-radius:var(--r);padding:14px;cursor:pointer;transition:all var(--transition);display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+.cat-card::before{content:'';position:absolute;inset:0;background:var(--accent);opacity:0;transition:opacity var(--transition)}
+.cat-card:hover{border-color:var(--accent);transform:translateY(-3px) scale(1.01);box-shadow:0 6px 20px rgba(26,58,42,.13)}
+.cat-card.selected{border-color:var(--accent);background:var(--accent-light)}
+.cat-card.selected::before{opacity:.04}
+.cat-icon{font-size:1.3rem;line-height:1;position:relative;z-index:1}
+.cat-name{font-size:.8rem;font-weight:600;color:var(--ink);position:relative;z-index:1;line-height:1.3}
+.cat-check{position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0);transition:all var(--transition)}
+.cat-card.selected .cat-check{opacity:1;transform:scale(1)}
+.cat-check svg{width:10px;height:10px;stroke:white;fill:none;stroke-width:3}
+
+/* ─── STORY LIST ─── */
+.story-item{background:white;border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:10px;cursor:pointer;transition:all var(--transition);border-left:3px solid var(--accent)}
+.story-item:hover{box-shadow:0 4px 20px rgba(0,0,0,.1);transform:translateX(4px)}
+.story-item.unreviewed{border-left-color:var(--gold)}
+.story-item-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.story-item-ticket{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--ink-4)}
+.story-item-meta{font-size:.73rem;color:var(--ink-3);margin-top:4px}
+.story-item-preview{font-size:.82rem;color:var(--ink-2);line-height:1.5;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.unread-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;flex-shrink:0}
+
+/* ─── MODAL ─── */
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex;animation:fadeIn .2s both}
+.modal{width:100%;max-width:500px;background:white;border-radius:var(--r-lg);padding:0;max-height:90vh;display:flex;flex-direction:column;animation:scaleIn .38s cubic-bezier(.16,1,.3,1) both;box-shadow:0 24px 64px rgba(0,0,0,.18)}
+.modal-header{padding:16px 20px 12px;border-bottom:1px solid var(--line-2);flex-shrink:0}
+.modal-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--ink)}
+.modal-body{padding:16px 20px;overflow-y:auto;flex:1}
+.modal-footer{padding:12px 20px 20px;border-top:1px solid var(--line-2);display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
+.modal-section{margin-bottom:14px}
+.modal-section-label{font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:5px}
+.modal-section-value{font-size:.85rem;color:var(--ink-2);line-height:1.6;background:var(--paper-2);border-radius:8px;padding:10px 12px;white-space:pre-wrap}
+
+/* ─── USER TABLE ─── */
+.user-table{width:100%;border-collapse:collapse}
+.user-table th{font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);padding:10px 12px;background:var(--paper-2);border-bottom:1px solid var(--line);text-align:left}
+.user-table td{padding:10px 12px;font-size:.83rem;border-bottom:1px solid var(--line-2);color:var(--ink-2);vertical-align:middle}
+.user-table tr:last-child td{border-bottom:none}
+.user-table tr:hover td{background:var(--paper-2)}
+.user-table-wrap{background:white;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;overflow-x:auto}
+
+/* ─── ADMIN ─── */
+#s-admin{background:var(--paper)}
+.admin-topbar{background:var(--ink);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100}
+.admin-topbar-brand{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase}
+.admin-topbar-brand strong{color:white}
+.admin-tabs-wrap{background:white;border-bottom:1px solid var(--line);padding:0 24px;display:flex;gap:0;position:sticky;top:56px;z-index:99;flex-shrink:0;overflow-x:auto}
+.admin-tab{padding:14px 18px;font-size:.8rem;font-weight:600;color:var(--ink-4);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all var(--transition);font-family:'IBM Plex Sans',sans-serif;white-space:nowrap}
+.admin-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.admin-tab:hover:not(.active){color:var(--ink-2)}
+.admin-tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;padding:0 5px;background:var(--red);color:white;font-size:.6rem;font-weight:700;margin-left:5px;vertical-align:middle}
+.admin-panel{display:none}
+.admin-panel.active{display:block}
+
+/* ─── ADMIN STATS ─── */
+.admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:white;border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.stat-card-val{font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--ink)}
+.stat-card-label{font-size:.68rem;color:var(--ink-4);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+
+/* ─── CATEGORY BARS ─── */
+.cat-bars{background:white;border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:16px}
+.cat-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cat-bar-label{font-size:.76rem;color:var(--ink-2);width:170px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-bar-track{flex:1;height:8px;background:var(--line-2);border-radius:4px;overflow:hidden}
+.cat-bar-fill{height:100%;background:var(--accent-mid);border-radius:4px;transition:width .6s cubic-bezier(.16,1,.3,1)}
+.cat-bar-count{font-size:.73rem;color:var(--ink-4);min-width:28px;text-align:right}
+
+/* ─── ADMIN PASS GATE ─── */
+#admin-pass-overlay{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:24px}
+#admin-pass-overlay.open{display:flex;animation:fadeIn .2s both}
+.admin-pass-card{background:white;border-radius:var(--r-lg);padding:28px;width:100%;max-width:360px;animation:scaleIn .3s cubic-bezier(.2,0,.2,1) both}
+.admin-pass-title{font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:.3rem}
+.admin-pass-sub{font-size:.82rem;color:var(--ink-3);margin-bottom:1.2rem}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:white;border-radius:100px;padding:10px 20px;font-size:.82rem;font-weight:500;z-index:9999;transition:transform .3s cubic-bezier(.2,0,.2,1);white-space:nowrap;display:flex;align-items:center;gap:8px;max-width:90vw}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast-success{background:var(--accent)}
+.toast-err{background:var(--red)}
+.toast-info{background:var(--blue)}
+
+/* ─── EMPTY STATE ─── */
+.empty-state{text-align:center;padding:48px 24px;color:var(--ink-4)}
+.empty-state svg{width:40px;height:40px;stroke:var(--line);fill:none;stroke-width:1.5;margin:0 auto 12px;display:block}
+.empty-state p{font-size:.83rem;line-height:1.6}
+
+/* ─── SUCCESS ─── */
+#s-success{background:var(--paper);align-items:center;justify-content:center;padding:24px}
+.success-wrap{width:100%;max-width:380px;text-align:center}
+.success-icon{width:72px;height:72px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 1.4rem;box-shadow:0 8px 32px rgba(26,58,42,.25)}
+.success-icon svg{width:32px;height:32px;fill:none;stroke:white;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.success-title{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--ink);margin-bottom:.6rem}
+.success-sub{font-size:.85rem;color:var(--ink-3);line-height:1.6;margin-bottom:.4rem}
+.success-ticket{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--ink-4);margin-bottom:1.8rem}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+.inline-action{font-size:.78rem;color:var(--accent-mid);cursor:pointer;font-weight:500;text-decoration:underline;text-underline-offset:2px}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:600px){
+  .admin-stats{grid-template-columns:1fr 1fr}
+  .admin-stats .stat-card:last-child{display:none}
+  .col-hide-mobile{display:none!important}
+  .topbar-user{display:none}
+  .cat-bar-label{width:110px}
+  .modal-footer{flex-direction:column}
+  .modal-footer .btn{width:100%}
+}
+@media(max-width:400px){
+  .admin-tab{padding:12px 10px;font-size:.72rem}
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="bg">
+  <div class="bg-grid"></div>
+  <div class="bg-blob bg-blob-1"></div>
+  <div class="bg-blob bg-blob-2"></div>
+</div>
+
+<!-- ══ ADMIN PASSWORD GATE ══ -->
+<div id="admin-pass-overlay">
+  <div class="admin-pass-card anim-scale">
+    <div style="width:40px;height:40px;border-radius:10px;background:var(--ink);display:flex;align-items:center;justify-content:center;margin-bottom:1rem">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="admin-pass-title">Akses Admin</div>
+    <div class="admin-pass-sub">Masukkan kata sandi admin untuk melanjutkan.</div>
+    <div class="form-group">
+      <div class="pw-wrap">
+        <input type="password" class="form-input" id="admin-pass-input" placeholder="Kata Sandi Admin…" maxlength="40">
+        <button class="pw-eye" onclick="togglePw('admin-pass-input',this)">👁</button>
+      </div>
+      <div class="form-err" id="admin-pass-err">Kata sandi salah.</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" onclick="closeAdminGate()">Batal</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" onclick="submitAdminPass()">Masuk Admin</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STORY DETAIL MODAL ══ -->
+<div class="modal-overlay" id="story-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="badge badge-green" id="sm-category">—</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--ink-4)" id="sm-ticket">—</span>
+        <span class="badge badge-gold" id="sm-unreviewed-badge" style="display:none">Belum Ditinjau</span>
+      </div>
+      <div class="modal-title" id="sm-name" style="margin-top:6px">—</div>
+      <div style="font-size:.78rem;color:var(--ink-4);margin-top:2px" id="sm-userid-header">—</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Info Karyawan</div>
+        <div style="display:flex;flex-direction:column;gap:5px;font-size:.84rem">
+          <div style="display:flex;gap:8px"><span style="color:var(--ink-4);width:52px;flex-shrink:0">NIK</span><span id="sm-nik" style="font-family:'IBM Plex Mono',monospace;font-weight:600">—</span></div>
+          <div style="display:flex;gap:8px"><span style="color:var(--ink-4);width:52px;flex-shrink:0">Nama</span><span id="sm-nama">—</span></div>
+          <div style="display:flex;gap:8px"><span style="color:var(--ink-4);width:52px;flex-shrink:0">Posisi</span><span id="sm-posisi">—</span></div>
+          <div style="display:flex;gap:8px"><span style="color:var(--ink-4);width:52px;flex-shrink:0">Toko</span><span id="sm-toko">—</span></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Cerita</div>
+        <div class="modal-section-value" id="sm-story">—</div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Dikirim</div>
+        <div class="modal-section-value" id="sm-time">—</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" id="sm-delete-btn" onclick="deleteStory()" style="display:none">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>Hapus
+      </button>
+      <button class="btn btn-gold btn-sm" id="sm-review-btn" onclick="markReviewed()" style="display:none">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Tandai Ditinjau
+      </button>
+      <button class="btn btn-primary" style="flex:1" onclick="closeModal('story-modal')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ USER EDIT MODAL ══ -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="um-title">Tambah Pengguna</div></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">NIK <span class="req">*</span></label>
+        <input type="text" class="form-input" id="um-id" placeholder="mis. EMP001" maxlength="20"
+          oninput="this.value=this.value.toUpperCase()"
+          onkeydown="if(event.key==='Enter'){document.getElementById('um-name').focus()}">
+        <div class="form-err" id="um-id-err">NIK wajib diisi dan harus unik.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nama Lengkap <span class="req">*</span></label>
+        <input type="text" class="form-input" id="um-name" placeholder="Nama lengkap…" maxlength="80"
+          onkeydown="if(event.key==='Enter'){document.getElementById('um-position').focus()}">
+        <div class="form-err" id="um-name-err">Nama wajib diisi.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Posisi <span class="req">*</span></label>
+        <input type="text" class="form-input" id="um-position" placeholder="mis. Sales Advisor, Store Leader…" maxlength="80"
+          onkeydown="if(event.key==='Enter'){document.getElementById('um-store').focus()}">
+        <div class="form-err" id="um-pos-err">Posisi wajib diisi.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Toko</label>
+        <input type="text" class="form-input" id="um-store" placeholder="mis. Galaxy Mall, Surabaya…" maxlength="80"
+          onkeydown="if(event.key==='Enter'){document.getElementById('um-pass').focus()}">
+        <div class="form-err" id="um-store-err">Toko wajib diisi.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kata Sandi <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-4)">(kosongkan = tidak diubah)</span></label>
+        <div class="pw-wrap">
+          <input type="password" class="form-input" id="um-pass" placeholder="Isi untuk set/ubah kata sandi…" maxlength="60"
+            onkeydown="if(event.key==='Enter'){saveUser()}">
+          <button class="pw-eye" onclick="togglePw('um-pass',this)">👁</button>
+        </div>
+        <div class="form-err" id="um-pass-err">Kata sandi wajib diisi saat menambah pengguna baru.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('user-modal')">Batal</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveUser()" id="um-save-btn">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ IMPORT EXCEL INFO MODAL ══ -->
+<input type="file" id="import-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(this)">
+
+<!-- ════════════════════════════════
+  SCREEN: LOGIN
+════════════════════════════════ -->
+<div class="screen active" id="s-login">
+  <div style="position:absolute;top:16px;right:16px;z-index:10">
+    <button class="btn-icon" onclick="openAdminGate()" title="Akses Admin">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </button>
+  </div>
+  <div class="login-wrap">
+    <div class="login-header anim-up">
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="login-title">InnerVoice</div>
+      <div class="login-sub">Platform Pengumpulan Cerita Karyawan</div>
+    </div>
+    <div class="card anim-up-1">
+      <div class="login-first-badge" id="login-first-notice">
+        👋 Login pertama? Anda akan diminta membuat kata sandi setelah memasukkan NIK.
+      </div>
+      <div class="form-group">
+        <label class="form-label">NIK <span class="req">*</span></label>
+        <input type="text" class="form-input" id="login-id" placeholder="Masukkan NIK Anda…" maxlength="20"
+          autocomplete="username"
+          oninput="this.value=this.value.toUpperCase().trim();checkFirstLogin()"
+          onkeydown="if(event.key==='Enter'){document.getElementById('login-pass').focus()}">
+        <div class="form-err" id="login-id-err">NIK tidak ditemukan atau akses telah dicabut.</div>
+      </div>
+      <div class="form-group" id="login-pass-group">
+        <label class="form-label">Kata Sandi <span class="req">*</span></label>
+        <div class="pw-wrap">
+          <input type="password" class="form-input" id="login-pass" placeholder="Kata Sandi…" maxlength="60"
+            autocomplete="current-password"
+            onkeydown="if(event.key==='Enter'){doLogin()}">
+          <button class="pw-eye" onclick="togglePw('login-pass',this)">👁</button>
+        </div>
+        <div class="form-err" id="login-pass-err">Kata sandi salah.</div>
+      </div>
+      <button class="btn btn-primary btn-full" id="login-btn" onclick="doLogin()">
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        Masuk
+      </button>
+    </div>
+    <p style="text-align:center;font-size:.72rem;color:var(--ink-4);margin-top:1.2rem">Hanya NIK yang terdaftar dalam database karyawan yang dapat mengakses platform ini.</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SCREEN: SET PASSWORD (first login)
+════════════════════════════════ -->
+<div class="screen" id="s-setpass">
+  <div class="setpass-wrap" style="margin:auto">
+    <div class="login-header anim-up">
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div class="login-title">Buat Kata Sandi</div>
+      <div class="login-sub" id="setpass-sub">Selamat datang! Silakan buat kata sandi untuk akun Anda.</div>
+    </div>
+    <div class="card anim-up-1">
+      <div class="form-group">
+        <label class="form-label">Kata Sandi Baru <span class="req">*</span></label>
+        <div class="pw-wrap">
+          <input type="password" class="form-input" id="sp-pass" placeholder="Pilih kata sandi (min 4 karakter)…" maxlength="60"
+            oninput="updateStrength('sp-pass','sp-strength')"
+            onkeydown="if(event.key==='Enter'){document.getElementById('sp-pass2').focus()}">
+          <button class="pw-eye" onclick="togglePw('sp-pass',this)">👁</button>
+        </div>
+        <div class="pw-strength" id="sp-strength">
+          <div class="pw-strength-bar" id="sp-str-1"></div>
+          <div class="pw-strength-bar" id="sp-str-2"></div>
+          <div class="pw-strength-bar" id="sp-str-3"></div>
+          <span class="pw-strength-label" id="sp-str-label"></span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Konfirmasi Kata Sandi <span class="req">*</span></label>
+        <div class="pw-wrap">
+          <input type="password" class="form-input" id="sp-pass2" placeholder="Ulangi kata sandi…" maxlength="60"
+            onkeydown="if(event.key==='Enter'){doSetPassword()}">
+          <button class="pw-eye" onclick="togglePw('sp-pass2',this)">👁</button>
+        </div>
+        <div class="form-err" id="sp-err">Kata sandi tidak cocok atau terlalu pendek (minimal 4 karakter).</div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="doSetPassword()">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:none;stroke:white;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg>
+        Simpan &amp; Masuk
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SCREEN: HOME
+════════════════════════════════ -->
+<div class="screen" id="s-home">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="topbar-name">Inner<span>Voice</span></div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-user">Hi, <strong id="topbar-name">—</strong></span>
+      <button class="btn-icon" title="Ubah Kata Sandi" onclick="show('s-changepass')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </button>
+      <button class="btn-icon" title="Akses Admin" onclick="openAdminGate()" style="opacity:.6">
+        <svg viewBox="0 0 24 24" style="width:17px;height:17px"><circle cx="12" cy="8" r="4"/><path d="M6 20v-1a6 6 0 0 1 12 0v1"/></svg>
+      </button>
+      <button class="btn-icon" title="Keluar" onclick="doLogout()">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="home-hero">
+    <div class="home-hero-greeting">Selamat datang kembali</div>
+    <div class="home-hero-name" id="home-name">—</div>
+    <div class="home-hero-info" id="home-info">—</div>
+    <div class="home-hero-bottom">
+      <div class="home-stat">
+        <div class="home-stat-val" id="home-stat-stories">0</div>
+        <div class="home-stat-label">Cerita Saya</div>
+      </div>
+      <div class="home-stat-divider"></div>
+      <div class="home-stat">
+        <div class="home-stat-val" id="home-stat-date">—</div>
+        <div class="home-stat-label">Hari Ini</div>
+      </div>
+      <div class="home-stat-divider"></div>
+      <div class="home-stat">
+        <div class="home-stat-val">✓</div>
+        <div class="home-stat-label">Terverifikasi</div>
+      </div>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:24px 20px 40px;max-width:520px;width:100%;margin:0 auto">
+    <div class="anim-up">
+      <div class="section-title">Bagikan Cerita</div>
+      <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1.2rem;line-height:1.55">Pilih kategori yang paling sesuai, lalu bagikan apa yang ada di pikiran Anda. Kiriman bersifat rahasia.</p>
+    </div>
+    <div class="cat-grid anim-up-1" id="cat-grid"></div>
+    <div class="form-group anim-up-2" id="other-cat-group" style="display:none">
+      <label class="form-label">Tentukan Kategori <span class="req">*</span></label>
+      <input type="text" class="form-input" id="other-cat-input" placeholder="Jelaskan kategori Anda…" maxlength="60">
+      <div class="form-err" id="other-cat-err">Harap tentukan kategorinya.</div>
+    </div>
+    <div class="form-err anim-up-2" id="cat-err" style="display:none">Harap pilih kategori terlebih dahulu.</div>
+    <button class="btn btn-primary btn-full anim-up-3" onclick="goToStory()" style="margin-top:.5rem">
+      Lanjut ke Cerita
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div style="margin-top:2rem" class="anim-up-4">
+      <div class="section-title">Kiriman Saya</div>
+      <div id="my-stories-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SCREEN: WRITE STORY
+════════════════════════════════ -->
+<div class="screen" id="s-story">
+  <div class="topbar">
+    <button class="btn btn-secondary btn-sm" onclick="goBack()">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Kembali
+    </button>
+    <div class="topbar-name">Inner<span>Voice</span></div>
+    <div style="width:70px"></div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:24px 20px 48px;max-width:520px;width:100%;margin:0 auto">
+    <div class="anim-up">
+      <div class="section-title">Kategori</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.4rem">
+        <span class="badge badge-green" id="story-cat-badge">—</span>
+        <span style="font-size:.78rem;color:var(--ink-3)">Terpilih</span>
+      </div>
+      <div class="page-title" style="font-size:1.2rem;margin-bottom:.4rem">Ceritakan kisahmu</div>
+      <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1.6rem;line-height:1.55">Kiriman Anda bersifat rahasia dan hanya akan ditinjau oleh manajemen.</p>
+    </div>
+    <div class="form-group anim-up-1">
+      <label class="form-label">Cerita Anda <span class="req">*</span></label>
+      <textarea class="form-textarea" id="story-text" placeholder="Tulis cerita Anda di sini…&#10;&#10;Boleh spesifik atau umum sesuai kenyamanan Anda." style="min-height:200px" maxlength="2000"></textarea>
+      <div class="form-err" id="story-err">Harap tulis cerita Anda sebelum mengirim.</div>
+    </div>
+    <div style="font-size:.73rem;color:var(--ink-4);margin-bottom:1.2rem" id="story-char-count">0 / 2000 karakter</div>
+    <button class="btn btn-primary btn-full anim-up-2" onclick="submitStory()">
+      <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Kirim Cerita
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SCREEN: SUCCESS
+════════════════════════════════ -->
+<div class="screen" id="s-success">
+  <div class="success-wrap" style="margin:auto">
+    <div class="success-icon anim-scale">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="success-title anim-up">Cerita Terkirim!</div>
+    <div class="success-sub anim-up-1">Terima kasih telah berbagi. Cerita Anda telah diterima dan akan ditinjau oleh manajemen.</div>
+    <div class="success-ticket anim-up-2" id="success-ticket">—</div>
+    <button class="btn btn-primary anim-up-3" onclick="goHome()">Kembali ke Beranda</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SCREEN: CHANGE PASSWORD
+════════════════════════════════ -->
+<div class="screen" id="s-changepass">
+  <div class="topbar">
+    <button class="btn btn-secondary btn-sm" onclick="show('s-home')">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Kembali
+    </button>
+    <div class="topbar-name">Inner<span>Voice</span></div>
+    <div style="width:70px"></div>
+  </div>
+  <div class="setpass-wrap" style="margin:auto;padding:32px 20px">
+    <div class="login-header anim-up">
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div class="login-title">Ubah Kata Sandi</div>
+      <div class="login-sub">Masukkan kata sandi lama dan buat kata sandi baru Anda.</div>
+    </div>
+    <div class="card anim-up-1">
+      <div class="form-group">
+        <label class="form-label">Kata Sandi Saat Ini <span class="req">*</span></label>
+        <div class="pw-wrap">
+          <input type="password" class="form-input" id="cp-old" placeholder="Kata sandi saat ini…" maxlength="60"
+            onkeydown="if(event.key==='Enter'){document.getElementById('cp-new').focus()}">
+          <button class="pw-eye" onclick="togglePw('cp-old',this)">👁</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kata Sandi Baru <span class="req">*</span></label>
+        <div class="pw-wrap">
+          <input type="password" class="form-input" id="cp-new" placeholder="Min. 4 karakter…" maxlength="60"
+            oninput="updateStrength('cp-new','cp-strength')"
+            onkeydown="if(event.key==='Enter'){document.getElementById('cp-new2').focus()}">
+          <button class="pw-eye" onclick="togglePw('cp-new',this)">👁</button>
+        </div>
+        <div class="pw-strength" id="cp-strength">
+          <div class="pw-strength-bar" id="cp-str-1"></div>
+          <div class="pw-strength-bar" id="cp-str-2"></div>
+          <div class="pw-strength-bar" id="cp-str-3"></div>
+          <span class="pw-strength-label" id="cp-str-label"></span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Konfirmasi Kata Sandi Baru <span class="req">*</span></label>
+        <div class="pw-wrap">
+          <input type="password" class="form-input" id="cp-new2" placeholder="Ulangi kata sandi baru…" maxlength="60"
+            onkeydown="if(event.key==='Enter'){doChangePass()}">
+          <button class="pw-eye" onclick="togglePw('cp-new2',this)">👁</button>
+        </div>
+        <div class="form-err" id="cp-err">Periksa kembali kata sandi Anda.</div>
+      </div>
+      <div style="display:flex;gap:.6rem">
+        <button class="btn btn-secondary" onclick="show('s-home')" style="flex:1">Batal</button>
+        <button class="btn btn-primary" onclick="doChangePass()" style="flex:2">
+          <svg viewBox="0 0 24 24" style="width:15px;height:15px;fill:none;stroke:white;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg>
+          Simpan Perubahan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SCREEN: ADMIN
+════════════════════════════════ -->
+<div class="screen" id="s-admin">
+  <div class="admin-topbar">
+    <div class="admin-topbar-brand"><strong>INNERVOICE</strong> — ADMIN</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-secondary btn-sm" onclick="exitAdmin()" style="font-size:.72rem">Keluar Admin</button>
+    </div>
+  </div>
+  <div class="admin-tabs-wrap">
+    <button class="admin-tab active" id="atab-stories" onclick="adminTab('stories')">
+      Cerita <span class="admin-tab-badge" id="unread-badge" style="display:none">0</span>
+    </button>
+    <button class="admin-tab" id="atab-users" onclick="adminTab('users')">Pengguna</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:20px;max-width:1100px;width:100%;margin:0 auto">
+
+    <!-- Cerita Panel -->
+    <div class="admin-panel active" id="apanel-stories">
+      <div class="admin-stats anim-up">
+        <div class="stat-card">
+          <div class="stat-card-val" id="stat-total">0</div>
+          <div class="stat-card-label">Total Cerita</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-val" id="stat-today">0</div>
+          <div class="stat-card-label">Hari Ini</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-val" id="stat-unreviewed">0</div>
+          <div class="stat-card-label">Belum Ditinjau</div>
+        </div>
+      </div>
+      <div class="cat-bars anim-up-1" id="cat-bars-section" style="display:none">
+        <div class="section-title" style="margin-bottom:10px">Cerita per Kategori</div>
+        <div id="cat-bars-content"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap" class="anim-up-2">
+        <div style="flex:1;min-width:180px;position:relative">
+          <input type="text" class="form-input" id="search-input" placeholder="Cari cerita, nama, NIK…" oninput="renderCerita()" style="padding-left:36px">
+          <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--ink-4);fill:none;stroke-width:2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <select class="form-select" id="filter-cat" onchange="renderCerita()" style="width:auto;min-width:150px">
+          <option value="">Semua Kategori</option>
+        </select>
+        <select class="form-select" id="filter-review" onchange="renderCerita()" style="width:auto;min-width:150px">
+          <option value="">Semua Status</option>
+          <option value="unreviewed">Belum Ditinjau</option>
+          <option value="reviewed">Sudah Ditinjau</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="exportExcel()">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Export Cerita
+        </button>
+      </div>
+      <div id="stories-list" class="anim-up-3"></div>
+    </div>
+
+    <!-- Pengguna Panel -->
+    <div class="admin-panel" id="apanel-users">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px" class="anim-up">
+        <div>
+          <div class="section-title">Database Pengguna <span id="users-count-badge" style="font-size:.78rem;font-weight:400;color:var(--ink-4)"></span></div>
+          <p style="font-size:.8rem;color:var(--ink-3)">Hanya NIK terdaftar yang dapat mengakses platform.</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <input type="text" id="user-search-input" class="form-input" placeholder="Cari NIK, nama, posisi…" style="width:200px;padding:8px 12px;font-size:.82rem" oninput="renderPengguna()">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file-input').click()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import Excel
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="exportUsers()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Pengguna
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openAddUser()">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tambah Pengguna
+          </button>
+        </div>
+      </div>
+      <div class="user-table-wrap anim-up-1">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>NIK</th>
+              <th>Nama</th>
+              <th>Posisi</th>
+              <th>Toko</th>
+              <th>Cerita</th>
+              <th class="col-hide-mobile">Kata Sandi</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-msg"></span>
+</div>
+
+
+<script>
+// ════════════════════════════════════════
+// CONFIG — set your API URL here
+// ════════════════════════════════════════
+// ⚠️ IMPORTANT: Replace this URL with your deployed backend URL before going live.
+// After deploying the server folder to Render/Railway, paste the URL here.
+const API_URL = '';
+
+const CATEGORIES = [
+  { id:'customer',  icon:'🤝', name:'Pengalaman Pelanggan' },
+  { id:'ops',       icon:'⚙️', name:'Operasional' },
+  { id:'team',      icon:'👥', name:'Tim & Budaya Kerja' },
+  { id:'product',   icon:'🛍️', name:'Produk & Merchandising' },
+  { id:'facility',  icon:'🏪', name:'Toko & Fasilitas' },
+  { id:'training',  icon:'📚', name:'Pelatihan & Pengembangan' },
+  { id:'hr',        icon:'📋', name:'SDM & Tunjangan' },
+  { id:'other',     icon:'✏️', name:'Lainnya' },
+];
+
+// ─── Session state ────────────────────
+var currentUser   = null;   // { id, name, position, store, token }
+var adminToken    = null;   // base64 of admin password
+var selectedCat   = null;
+var editingUserId = null;
+var currentStoryId = null;
+var cachedStories  = [];    // admin cache
+var cachedUsers    = [];    // admin cache
+
+// ─── Persist session across page reload ──────────────────────────────────────
+function loadSession() {
+  try {
+    var s = sessionStorage.getItem('iv_session');
+    if (s) currentUser = JSON.parse(s);
+  } catch(e) {}
+}
+function saveSession() {
+  try { sessionStorage.setItem('iv_session', JSON.stringify(currentUser)); } catch(e) {}
+}
+function clearSession() {
+  currentUser = null;
+  adminToken  = null;
+  try { sessionStorage.removeItem('iv_session'); } catch(e) {}
+}
+loadSession();
+
+// ════════════════════════════════════════
+// API HELPERS
+// ════════════════════════════════════════
+async function api(method, path, body, token) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  if (body)  opts.body = JSON.stringify(body);
+  try {
+    const res = await fetch(API_URL + path, opts);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan. Coba lagi.');
+    return data;
+  } catch (e) {
+    if (e.message === 'Failed to fetch') throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
+    throw e;
+  }
+}
+
+// ════════════════════════════════════════
+// SCREEN NAVIGATION
+// ════════════════════════════════════════
+function show(id) {
+  var current = document.querySelector('.screen.active');
+  var next = document.getElementById(id);
+  if (!next || next === current) return;
+  if (current) {
+    current.classList.add('leaving');
+    current.classList.remove('active');
+    setTimeout(function() { current.classList.remove('leaving'); }, 300);
+  }
+  next.querySelectorAll('[class*="anim-"]').forEach(function(el) {
+    el.style.animation = 'none'; el.offsetHeight; el.style.animation = '';
+  });
+  next.classList.add('active', 'entering');
+  next.scrollTop = 0;
+  setTimeout(function() { next.classList.remove('entering'); }, 420);
+}
+
+// ════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════
+function checkFirstLogin() {
+  // Visual hint — actual check happens server-side on login
+}
+
+async function doLogin() {
+  var btn = document.getElementById('login-btn');
+  var nikVal = document.getElementById('login-id').value.trim().toUpperCase();
+  var passVal = document.getElementById('login-pass').value;
+  var idErr   = document.getElementById('login-id-err');
+  var passErr = document.getElementById('login-pass-err');
+  idErr.style.display = 'none'; passErr.style.display = 'none';
+  document.getElementById('login-id').classList.remove('error');
+  document.getElementById('login-pass').classList.remove('error');
+
+  if (!nikVal) {
+    idErr.textContent = 'NIK wajib diisi.'; idErr.style.display = 'block';
+    document.getElementById('login-id').classList.add('error'); return;
+  }
+
+  btn.classList.add('btn-loading');
+  btn.disabled = true;
+  try {
+    const data = await api('POST', '/api/login', { nik: nikVal, password: passVal });
+
+    if (data.firstLogin) {
+      // No password set yet — go to set-password screen
+      currentUser = { id: nikVal, name: data.name, token: null };
+      document.getElementById('setpass-sub').textContent = 'Selamat datang, ' + data.name + '! Silakan buat kata sandi untuk akun Anda.';
+      document.getElementById('sp-pass').value = '';
+      document.getElementById('sp-pass2').value = '';
+      document.getElementById('sp-err').style.display = 'none';
+      updateStrength('sp-pass', 'sp-strength');
+      show('s-setpass');
+      return;
+    }
+
+    currentUser = { id: nikVal, name: data.user.name, position: data.user.position, store: data.user.store, token: data.token };
+    saveSession();
+    enterHome();
+  } catch(e) {
+    var msg = e.message || '';
+    if (msg.includes('NIK') || msg.includes('dicabut')) {
+      idErr.textContent = msg; idErr.style.display = 'block';
+      document.getElementById('login-id').classList.add('error');
+    } else if (msg.includes('sandi')) {
+      passErr.style.display = 'block';
+      document.getElementById('login-pass').classList.add('error');
+    } else {
+      idErr.textContent = msg; idErr.style.display = 'block';
+    }
+  } finally {
+    btn.classList.remove('btn-loading'); btn.disabled = false;
+  }
+}
+
+async function doSetPassword() {
+  var p1  = document.getElementById('sp-pass').value;
+  var p2  = document.getElementById('sp-pass2').value;
+  var err = document.getElementById('sp-err');
+  err.style.display = 'none';
+  if (p1.length < 4 || p1 !== p2) {
+    err.style.display = 'block';
+    document.getElementById('sp-pass').classList.add('error');
+    document.getElementById('sp-pass2').classList.add('error'); return;
+  }
+  document.getElementById('sp-pass').classList.remove('error');
+  document.getElementById('sp-pass2').classList.remove('error');
+  try {
+    const data = await api('POST', '/api/set-password', { nik: currentUser.id, password: p1 });
+    currentUser = { id: currentUser.id, name: data.user.name, position: data.user.position, store: data.user.store, token: data.token };
+    saveSession();
+    toast('Kata sandi berhasil dibuat! Selamat datang di InnerVoice.', 'success');
+    enterHome();
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'block';
+  }
+}
+
+async function doChangePass() {
+  var oldPass  = document.getElementById('cp-old').value;
+  var newPass  = document.getElementById('cp-new').value;
+  var newPass2 = document.getElementById('cp-new2').value;
+  var err = document.getElementById('cp-err');
+  err.style.display = 'none';
+  ['cp-old','cp-new','cp-new2'].forEach(function(id) { document.getElementById(id).classList.remove('error'); });
+  if (newPass.length < 4 || newPass !== newPass2) {
+    err.textContent = 'Kata sandi baru tidak cocok atau terlalu pendek (min. 4 karakter).';
+    err.style.display = 'block';
+    document.getElementById('cp-new').classList.add('error');
+    document.getElementById('cp-new2').classList.add('error'); return;
+  }
+  try {
+    const data = await api('PUT', '/api/change-password', { oldPassword: oldPass, newPassword: newPass }, currentUser.token);
+    currentUser.token = data.token;
+    saveSession();
+    show('s-home');
+    toast('Kata sandi berhasil diubah!', 'success');
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'block';
+    if (e.message.includes('lama')) document.getElementById('cp-old').classList.add('error');
+  }
+}
+
+function doLogout() {
+  if (!confirm('Anda yakin ingin keluar?')) return;
+  clearSession();
+  document.getElementById('login-id').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-id-err').style.display = 'none';
+  document.getElementById('login-pass-err').style.display = 'none';
+  document.getElementById('login-first-notice').style.display = 'none';
+  show('s-login');
+  toast('Anda telah keluar.', 'success');
+}
+
+// ════════════════════════════════════════
+// HOME
+// ════════════════════════════════════════
+async function enterHome() {
+  document.getElementById('topbar-name').textContent = currentUser.name.split(' ')[0];
+  document.getElementById('home-name').textContent = currentUser.name;
+  document.getElementById('home-info').textContent = (currentUser.position || '') + (currentUser.store ? ' · ' + currentUser.store : '');
+  document.getElementById('home-stat-date').textContent = new Date().toLocaleDateString('id-ID', { month:'short', day:'numeric' });
+  buildCatGrid();
+  show('s-home');
+  await renderMyCerita();
+}
+
+function buildCatGrid() {
+  var grid = document.getElementById('cat-grid');
+  grid.innerHTML = CATEGORIES.map(function(cat) {
+    return '<div class="cat-card" id="cat-' + escH(cat.id) + '" data-catid="' + escH(cat.id) + '">'
+      + '<div class="cat-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      + '<div class="cat-icon">' + cat.icon + '</div>'
+      + '<div class="cat-name">' + escH(cat.name) + '</div>'
+      + '</div>';
+  }).join('');
+  selectedCat = null;
+  document.getElementById('other-cat-group').style.display = 'none';
+  document.getElementById('other-cat-input').value = '';
+  grid.onclick = function(e) {
+    var card = e.target.closest('[data-catid]');
+    if (card) selectCat(card.getAttribute('data-catid'));
+  };
+}
+
+function selectCat(id) {
+  document.querySelectorAll('.cat-card').forEach(function(c) { c.classList.remove('selected'); });
+  var card = document.getElementById('cat-' + id);
+  if (card) card.classList.add('selected');
+  selectedCat = CATEGORIES.find(function(c) { return c.id === id; }) || null;
+  document.getElementById('cat-err').style.display = 'none';
+  document.getElementById('other-cat-group').style.display = (id === 'other') ? 'block' : 'none';
+  if (id !== 'other') document.getElementById('other-cat-input').value = '';
+}
+
+function goToStory() {
+  if (!selectedCat) { document.getElementById('cat-err').style.display = 'block'; return; }
+  if (selectedCat.id === 'other') {
+    var otherVal = document.getElementById('other-cat-input').value.trim();
+    if (!otherVal) {
+      document.getElementById('other-cat-err').style.display = 'block';
+      document.getElementById('other-cat-input').classList.add('error'); return;
+    }
+    document.getElementById('other-cat-err').style.display = 'none';
+    document.getElementById('other-cat-input').classList.remove('error');
+  }
+  var catNama = selectedCat.id === 'other' ? document.getElementById('other-cat-input').value.trim() : selectedCat.name;
+  document.getElementById('story-cat-badge').textContent = catNama;
+  document.getElementById('story-text').value = '';
+  document.getElementById('story-err').style.display = 'none';
+  document.getElementById('story-char-count').textContent = '0 / 2000 karakter';
+  show('s-story');
+}
+
+async function goBack() { show('s-home'); await renderMyCerita(); }
+async function goHome() { buildCatGrid(); show('s-home'); await renderMyCerita(); }
+
+async function renderMyCerita() {
+  var el = document.getElementById('my-stories-list');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--ink-4);font-size:.82rem">Memuat cerita…</div>';
+  try {
+    var mine = await api('GET', '/api/stories/mine', null, currentUser.token);
+    var statEl = document.getElementById('home-stat-stories');
+    if (statEl) statEl.textContent = mine.length;
+    if (mine.length === 0) {
+      el.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>Belum ada kiriman.<br>Bagikan cerita pertama Anda!</p></div>';
+      return;
+    }
+    el.innerHTML = mine.map(function(s) {
+      var d = new Date(s.time);
+      var ts = d.toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) + ' · ' + d.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+      return '<div class="story-item" data-id="' + escH(s.id) + '">'
+        + '<div class="story-item-header"><span class="badge badge-green">' + (s.categoryIcon||'') + ' ' + escH(s.category||'') + '</span>'
+        + '<span class="story-item-ticket">' + escH(s.id) + '</span></div>'
+        + '<div class="story-item-preview">' + escH(s.text||'') + '</div>'
+        + '<div class="story-item-meta">' + ts + '</div></div>';
+    }).join('');
+    el.onclick = function(e) {
+      var item = e.target.closest('[data-id]');
+      if (item) openStoryModal(item.getAttribute('data-id'), false);
+    };
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><p>' + escH(e.message) + '</p></div>';
+  }
+}
+
+// ════════════════════════════════════════
+// STORY SUBMISSION
+// ════════════════════════════════════════
+async function submitStory() {
+  var text = document.getElementById('story-text').value.trim();
+  var err  = document.getElementById('story-err');
+  if (!text) { err.style.display = 'block'; document.getElementById('story-text').classList.add('error'); return; }
+  err.style.display = 'none'; document.getElementById('story-text').classList.remove('error');
+  var catNama = selectedCat.id === 'other' ? document.getElementById('other-cat-input').value.trim() : selectedCat.name;
+  var btn = document.querySelector('#s-story .btn-primary');
+  if (btn) { btn.classList.add('btn-loading'); btn.disabled = true; }
+  try {
+    var data = await api('POST', '/api/stories', { category: catNama, categoryIcon: selectedCat.icon, text }, currentUser.token);
+    document.getElementById('success-ticket').textContent = 'Referensi: ' + data.id;
+    show('s-success');
+  } catch(e) {
+    err.textContent = e.message; err.style.display = 'block';
+  } finally {
+    if (btn) { btn.classList.remove('btn-loading'); btn.disabled = false; }
+  }
+}
+
+// ════════════════════════════════════════
+// ADMIN GATE
+// ════════════════════════════════════════
+function openAdminGate() {
+  document.getElementById('admin-pass-input').value = '';
+  document.getElementById('admin-pass-err').style.display = 'none';
+  document.getElementById('admin-pass-input').classList.remove('error');
+  document.getElementById('admin-pass-overlay').classList.add('open');
+  setTimeout(function() { document.getElementById('admin-pass-input').focus(); }, 100);
+}
+function closeAdminGate() { document.getElementById('admin-pass-overlay').classList.remove('open'); }
+document.getElementById('admin-pass-overlay').addEventListener('click', function(e) { if (e.target === this) closeAdminGate(); });
+
+async function submitAdminPass() {
+  var val = document.getElementById('admin-pass-input').value;
+  var err = document.getElementById('admin-pass-err');
+  // Build token and verify via API health (the token will be rejected by protected routes if wrong)
+  var candidateToken = btoa(val);
+  try {
+    await api('GET', '/api/admin/stories', null, candidateToken);
+    adminToken = candidateToken;
+    closeAdminGate();
+    show('s-admin');
+    adminTab('stories');
+  } catch(e) {
+    err.style.display = 'block';
+    document.getElementById('admin-pass-input').classList.add('error');
+    document.getElementById('admin-pass-input').value = '';
+  }
+}
+function exitAdmin() { if (currentUser) show('s-home'); else show('s-login'); }
+
+function adminTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.admin-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('atab-' + tab).classList.add('active');
+  document.getElementById('apanel-' + tab).classList.add('active');
+  if (tab === 'stories') renderCerita();
+  if (tab === 'users') renderPengguna();
+}
+
+// ════════════════════════════════════════
+// ADMIN: STORIES
+// ════════════════════════════════════════
+async function renderCerita() {
+  var el = document.getElementById('stories-list');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--ink-4);font-size:.82rem">Memuat cerita…</div>';
+  try {
+    cachedStories = await api('GET', '/api/admin/stories', null, adminToken);
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><p>' + escH(e.message) + '</p></div>'; return;
+  }
+
+  var search     = ((document.getElementById('search-input')||{}).value||'').toLowerCase();
+  var filterCat  = (document.getElementById('filter-cat')||{}).value||'';
+  var filterRev  = (document.getElementById('filter-review')||{}).value||'';
+
+  // Populate category dropdown
+  var filterEl = document.getElementById('filter-cat');
+  if (filterEl) {
+    var curVal = filterEl.value;
+    var cats = Array.from(new Set(cachedStories.map(function(s){return s.category;}))).filter(Boolean).sort();
+    filterEl.innerHTML = '<option value="">Semua Kategori</option>'
+      + cats.map(function(c){ return '<option value="'+escH(c)+'"'+(c===curVal?' selected':'')+'>'+escH(c)+'</option>'; }).join('');
+  }
+
+  var unreviewedCount = cachedStories.filter(function(s){return !s.reviewed;}).length;
+  var todayStr = new Date().toDateString();
+  document.getElementById('stat-total').textContent = cachedStories.length;
+  document.getElementById('stat-today').textContent = cachedStories.filter(function(s){return new Date(s.time).toDateString()===todayStr;}).length;
+  document.getElementById('stat-unreviewed').textContent = unreviewedCount;
+  var badge = document.getElementById('unread-badge');
+  if (unreviewedCount > 0) { badge.style.display='inline-flex'; badge.textContent=unreviewedCount; } else { badge.style.display='none'; }
+
+  renderCatBars(cachedStories);
+
+  var filtered = cachedStories.slice();
+  if (filterCat) filtered = filtered.filter(function(s){return s.category===filterCat;});
+  if (filterRev==='unreviewed') filtered = filtered.filter(function(s){return !s.reviewed;});
+  if (filterRev==='reviewed')   filtered = filtered.filter(function(s){return s.reviewed;});
+  if (search) filtered = filtered.filter(function(s){
+    return (s.userNama||'').toLowerCase().includes(search)||(s.userId||'').toLowerCase().includes(search)
+      ||(s.category||'').toLowerCase().includes(search)||(s.text||'').toLowerCase().includes(search)
+      ||(s.userToko||'').toLowerCase().includes(search);
+  });
+
+  if (filtered.length === 0) {
+    var emptyMsg = cachedStories.length===0 ? 'Belum ada cerita yang masuk.' : 'Tidak ada cerita untuk pencarian ini.';
+    el.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>'+emptyMsg+'</p></div>';
+    el.onclick=null; return;
+  }
+  el.innerHTML = filtered.map(function(s) {
+    var d = new Date(s.time);
+    var ts = d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})+' · '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    var isUnreviewed = !s.reviewed;
+    return '<div class="story-item'+(isUnreviewed?' unreviewed':'')+'" data-id="'+escH(s.id)+'" data-admin="1">'
+      +'<div class="story-item-header">'+(isUnreviewed?'<span class="unread-dot" title="Belum ditinjau"></span>':'')
+      +'<span class="badge badge-green">'+(s.categoryIcon||'')+' '+escH(s.category||'')+'</span>'
+      +'<span class="story-item-ticket">'+escH(s.id)+'</span></div>'
+      +'<div class="story-item-preview">'+escH(s.text||'')+'</div>'
+      +'<div class="story-item-meta"><code style="font-size:.71rem;background:#f3f3f0;padding:1px 5px;border-radius:3px;border:1px solid #e5e5e5">'+escH(s.userId||'')+'</code>'
+      +' · '+escH(s.userNama||'')+' · '+escH(s.userPosisi||'')+' · '+escH(s.userToko||'')+' · '+ts+'</div></div>';
+  }).join('');
+  el.onclick = function(e) {
+    var item = e.target.closest('[data-id]');
+    if (item) openStoryModal(item.getAttribute('data-id'), item.getAttribute('data-admin')==='1');
+  };
+}
+
+function renderCatBars(stories) {
+  var sec = document.getElementById('cat-bars-section');
+  var content = document.getElementById('cat-bars-content');
+  if (!sec||!content||stories.length===0) { if(sec) sec.style.display='none'; return; }
+  sec.style.display='block';
+  var counts={};
+  stories.forEach(function(s){counts[s.category]=(counts[s.category]||0)+1;});
+  var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];});
+  var max=sorted[0][1];
+  content.innerHTML=sorted.map(function(e){
+    var pct=Math.round((e[1]/max)*100);
+    return '<div class="cat-bar-row"><div class="cat-bar-label" title="'+escH(e[0])+'">'+escH(e[0])+'</div>'
+      +'<div class="cat-bar-track"><div class="cat-bar-fill" style="width:'+pct+'%"></div></div>'
+      +'<div class="cat-bar-count">'+e[1]+'</div></div>';
+  }).join('');
+}
+
+function openStoryModal(storyId, isAdmin) {
+  var s = cachedStories.find(function(x){return x.id===storyId;});
+  if (!s && !isAdmin) {
+    // For user's own stories, find from DOM data — re-fetch not needed
+    // Just show the story from the rendered list text (limited info)
+    return;
+  }
+  if (!s) return;
+  currentStoryId = storyId;
+  document.getElementById('sm-category').textContent = (s.categoryIcon||'')+' '+(s.category||'—');
+  document.getElementById('sm-ticket').textContent = s.id;
+  document.getElementById('sm-name').textContent = s.userNama||'—';
+  document.getElementById('sm-userid-header').textContent = 'NIK: '+(s.userId||'—');
+  document.getElementById('sm-nik').textContent = s.userId||'—';
+  document.getElementById('sm-nama').textContent = s.userNama||'—';
+  document.getElementById('sm-posisi').textContent = s.userPosisi||'—';
+  document.getElementById('sm-toko').textContent = s.userToko||'—';
+  document.getElementById('sm-story').textContent = s.text||'';
+  var d = new Date(s.time);
+  document.getElementById('sm-time').textContent = d.toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' · '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  var delBtn = document.getElementById('sm-delete-btn');
+  var revBtn = document.getElementById('sm-review-btn');
+  var unreviewedBadge = document.getElementById('sm-unreviewed-badge');
+  if (delBtn) delBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+  if (revBtn) revBtn.style.display = (isAdmin && !s.reviewed) ? 'inline-flex' : 'none';
+  if (unreviewedBadge) unreviewedBadge.style.display = !s.reviewed ? 'inline-flex' : 'none';
+  openModal('story-modal');
+}
+
+async function markReviewed() {
+  if (!currentStoryId) return;
+  try {
+    await api('PUT', '/api/admin/stories/'+currentStoryId+'/reviewed', {}, adminToken);
+    closeModal('story-modal');
+    await renderCerita();
+    toast('Cerita ditandai sudah ditinjau.', 'success');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function deleteStory() {
+  if (!currentStoryId) return;
+  if (!confirm('Hapus cerita '+currentStoryId+'? Tidak dapat dibatalkan.')) return;
+  try {
+    await api('DELETE', '/api/admin/stories/'+currentStoryId, null, adminToken);
+    closeModal('story-modal');
+    await renderCerita();
+    toast('Cerita berhasil dihapus.', 'success');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function exportExcel() {
+  var search    = ((document.getElementById('search-input')||{}).value||'').toLowerCase();
+  var filterCat = (document.getElementById('filter-cat')||{}).value||'';
+  var filterRev = (document.getElementById('filter-review')||{}).value||'';
+  var data = cachedStories.slice();
+  if (filterCat) data=data.filter(function(s){return s.category===filterCat;});
+  if (filterRev==='unreviewed') data=data.filter(function(s){return !s.reviewed;});
+  if (filterRev==='reviewed')   data=data.filter(function(s){return s.reviewed;});
+  if (search) data=data.filter(function(s){ return (s.userNama||'').toLowerCase().includes(search)||(s.userId||'').toLowerCase().includes(search)||(s.text||'').toLowerCase().includes(search); });
+  if (data.length===0) { toast('Tidak ada cerita untuk diekspor.','err'); return; }
+  var wsData=[['No. Tiket','Tanggal','Waktu','Nama','NIK','Posisi','Toko','Kategori','Cerita','Status']];
+  data.forEach(function(s){ var d=new Date(s.time); wsData.push([s.id,d.toLocaleDateString('id-ID',{year:'numeric',month:'2-digit',day:'2-digit'}),d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}),s.userNama||'',s.userId||'',s.userPosisi||'',s.userToko||'',s.category||'',s.text||'',s.reviewed?'Ditinjau':'Belum']); });
+  if (typeof XLSX!=='undefined') {
+    var wb=XLSX.utils.book_new(); var ws=XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols']=[{wch:14},{wch:12},{wch:8},{wch:24},{wch:10},{wch:20},{wch:26},{wch:22},{wch:60},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,ws,'Cerita'); XLSX.writeFile(wb,'innervoice-cerita-'+new Date().toISOString().slice(0,10)+'.xlsx');
+    toast('Excel berhasil diunduh ('+( wsData.length-1)+' cerita)!','success');
+  }
+}
+
+// ════════════════════════════════════════
+// ADMIN: USERS
+// ════════════════════════════════════════
+async function renderPengguna() {
+  var tbody = document.getElementById('users-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--ink-4)">Memuat pengguna…</td></tr>';
+  try {
+    cachedUsers = await api('GET', '/api/admin/users', null, adminToken);
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--red)">'+escH(e.message)+'</td></tr>'; return;
+  }
+  var search = ((document.getElementById('user-search-input')||{}).value||'').toLowerCase();
+  var users = cachedUsers.slice();
+  if (search) users=users.filter(function(u){ return u.id.toLowerCase().includes(search)||(u.name||'').toLowerCase().includes(search)||(u.position||'').toLowerCase().includes(search)||(u.store||'').toLowerCase().includes(search); });
+
+  var storyCountMap={};
+  cachedStories.forEach(function(s){ storyCountMap[s.userId]=(storyCountMap[s.userId]||0)+1; });
+
+  var cb=document.getElementById('users-count-badge');
+  if(cb) cb.textContent='('+users.length+(search?' dari '+cachedUsers.length:'')+' pengguna)';
+
+  if (users.length===0) { tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--ink-4)">Tidak ada pengguna ditemukan.</td></tr>'; tbody.onclick=null; return; }
+
+  tbody.innerHTML=users.map(function(u){
+    var isActive=u.active!==false;
+    var sc=storyCountMap[u.id]||0;
+    var passCell=u.hasPassword?'<span style="font-family:monospace;font-size:.75rem;background:#f3f3f0;padding:2px 7px;border-radius:4px;border:1px solid #e2e2e2">••••••</span>':'<em style="color:var(--ink-4);font-size:.8rem">Belum diatur</em>';
+    return '<tr data-uid="'+escH(u.id)+'">'
+      +'<td><code style="font-family:monospace;font-size:.78rem">'+escH(u.id)+'</code></td>'
+      +'<td style="font-weight:500">'+escH(u.name||'')+'</td>'
+      +'<td>'+escH(u.position||'')+'</td>'
+      +'<td>'+escH(u.store||'')+'</td>'
+      +'<td style="text-align:center">'+(sc>0?'<span class="badge badge-blue">'+sc+'</span>':'<span style="color:var(--ink-4)">0</span>')+'</td>'
+      +'<td class="col-hide-mobile">'+passCell+'</td>'
+      +'<td><span class="badge '+(isActive?'badge-green':'badge-red')+'">'+(isActive?'Aktif':'Nonaktif')+'</span></td>'
+      +'<td><div style="display:flex;gap:4px;flex-wrap:wrap">'
+      +'<button class="btn btn-secondary btn-xs" data-action="edit">Edit</button>'
+      +'<button class="btn btn-xs '+(isActive?'btn-gold':'btn-secondary')+'" data-action="toggle">'+(isActive?'Nonaktifkan':'Aktifkan')+'</button>'
+      +'<button class="btn btn-secondary btn-xs" data-action="resetpw">Reset PW</button>'
+      +'<button class="btn btn-danger btn-xs" data-action="del">Hapus</button>'
+      +'</div></td></tr>';
+  }).join('');
+
+  tbody.onclick=function(e){
+    var btn=e.target.closest('[data-action]'); if(!btn) return;
+    var row=btn.closest('[data-uid]'); if(!row) return;
+    var uid=row.getAttribute('data-uid'), action=btn.getAttribute('data-action');
+    if(action==='edit') openEditUser(uid);
+    else if(action==='toggle') toggleUserActive(uid);
+    else if(action==='resetpw') resetUserPassword(uid);
+    else if(action==='del') deleteUser(uid);
+  };
+}
+
+function openAddUser() {
+  editingUserId=null;
+  document.getElementById('um-title').textContent='Tambah Pengguna Baru';
+  document.getElementById('um-save-btn').textContent='Tambah Pengguna';
+  ['um-id','um-name','um-position','um-store','um-pass'].forEach(function(id){ document.getElementById(id).value=''; document.getElementById(id).classList.remove('error'); document.getElementById(id).disabled=false; });
+  ['um-id-err','um-name-err','um-pos-err','um-store-err','um-pass-err'].forEach(function(id){ document.getElementById(id).style.display='none'; });
+  openModal('user-modal');
+  setTimeout(function(){document.getElementById('um-id').focus();},100);
+}
+
+function openEditUser(userId) {
+  var u=cachedUsers.find(function(x){return x.id===userId;});
+  if(!u) return;
+  editingUserId=userId;
+  document.getElementById('um-title').textContent='Edit Pengguna';
+  document.getElementById('um-save-btn').textContent='Simpan Perubahan';
+  document.getElementById('um-id').value=userId;
+  document.getElementById('um-id').disabled=false;
+  document.getElementById('um-name').value=u.name||'';
+  document.getElementById('um-position').value=u.position||'';
+  document.getElementById('um-store').value=u.store||'';
+  document.getElementById('um-pass').value='';
+  ['um-id-err','um-name-err','um-pos-err','um-store-err','um-pass-err'].forEach(function(id){ document.getElementById(id).style.display='none'; });
+  ['um-id','um-name','um-position','um-store','um-pass'].forEach(function(id){ document.getElementById(id).classList.remove('error'); });
+  openModal('user-modal');
+  setTimeout(function(){document.getElementById('um-name').focus();},100);
+}
+
+async function saveUser() {
+  var id=editingUserId||document.getElementById('um-id').value.trim().toUpperCase();
+  var name=document.getElementById('um-name').value.trim();
+  var pos=document.getElementById('um-position').value.trim();
+  var store=document.getElementById('um-store').value.trim();
+  var pass=document.getElementById('um-pass').value;
+  var ok=true;
+  if(!editingUserId&&!id){ document.getElementById('um-id-err').textContent='NIK wajib diisi.'; document.getElementById('um-id-err').style.display='block'; document.getElementById('um-id').classList.add('error'); ok=false; }
+  else { document.getElementById('um-id-err').style.display='none'; document.getElementById('um-id').classList.remove('error'); }
+  if(!name){ document.getElementById('um-name-err').style.display='block'; document.getElementById('um-name').classList.add('error'); ok=false; }
+  else { document.getElementById('um-name-err').style.display='none'; document.getElementById('um-name').classList.remove('error'); }
+  if(!pos){ document.getElementById('um-pos-err').style.display='block'; document.getElementById('um-position').classList.add('error'); ok=false; }
+  else { document.getElementById('um-pos-err').style.display='none'; document.getElementById('um-position').classList.remove('error'); }
+  if(!ok) return;
+  var btn=document.getElementById('um-save-btn'); btn.classList.add('btn-loading'); btn.disabled=true;
+  try {
+    if(editingUserId) {
+      await api('PUT','/api/admin/users/'+editingUserId,{id,name,position:pos,store,password:pass||undefined},adminToken);
+    } else {
+      await api('POST','/api/admin/users',{id,name,position:pos,store,password:pass||undefined},adminToken);
+    }
+    closeModal('user-modal');
+    await renderPengguna();
+    toast(editingUserId?'Pengguna berhasil diperbarui.':'Pengguna berhasil ditambahkan.','success');
+  } catch(e) {
+    if(e.message.includes('NIK')){ document.getElementById('um-id-err').textContent=e.message; document.getElementById('um-id-err').style.display='block'; document.getElementById('um-id').classList.add('error'); }
+    else toast(e.message,'err');
+  } finally { btn.classList.remove('btn-loading'); btn.disabled=false; }
+}
+
+async function toggleUserActive(userId) {
+  var u=cachedUsers.find(function(x){return x.id===userId;});
+  if(!u) return;
+  if(u.active&&!confirm('Nonaktifkan "'+userId+' - '+u.name+'"?\nUser tidak bisa login sampai diaktifkan kembali.')) return;
+  try {
+    var res=await api('PUT','/api/admin/users/'+userId+'/toggle',{},adminToken);
+    await renderPengguna();
+    toast(u.name+' '+(res.active?'diaktifkan':'dinonaktifkan')+'.','success');
+  } catch(e){ toast(e.message,'err'); }
+}
+
+async function resetUserPassword(userId) {
+  var u=cachedUsers.find(function(x){return x.id===userId;});
+  if(!u) return;
+  if(!confirm('Reset kata sandi "'+userId+' - '+u.name+'"?\nUser harus buat kata sandi baru saat login berikutnya.')) return;
+  try {
+    await api('PUT','/api/admin/users/'+userId+'/reset-password',{},adminToken);
+    await renderPengguna();
+    toast('Kata sandi '+u.name+' berhasil direset.','success');
+  } catch(e){ toast(e.message,'err'); }
+}
+
+async function deleteUser(userId) {
+  var u=cachedUsers.find(function(x){return x.id===userId;});
+  var nama=u?u.name:userId;
+  if(!confirm('Hapus "'+userId+' - '+nama+'"?\nUser tidak dapat login lagi.')) return;
+  try {
+    await api('DELETE','/api/admin/users/'+userId,null,adminToken);
+    await renderPengguna();
+    toast('User '+nama+' berhasil dihapus.','success');
+  } catch(e){ toast(e.message,'err'); }
+}
+
+function handleImportFile(input) {
+  var file=input.files[0]; if(!file) return; input.value='';
+  var reader=new FileReader();
+  reader.onload=async function(e){
+    try {
+      var wb=XLSX.read(e.target.result,{type:'array'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(rows.length===0){toast('File kosong.','err');return;}
+      var colMap={};
+      Object.keys(rows[0]).forEach(function(k){ var kl=k.toLowerCase().trim();
+        if(kl==='nik') colMap.nik=k; else if(kl==='nama'||kl==='nama lengkap'||kl==='name') colMap.name=k;
+        else if(kl==='posisi'||kl==='position'||kl==='jabatan') colMap.position=k;
+        else if(kl==='toko'||kl==='store'||kl==='lokasi') colMap.store=k;
+      });
+      if(!colMap.nik||!colMap.name){toast('Kolom NIK dan Nama wajib ada.','err');return;}
+      var users=rows.map(function(r){ return {id:String(r[colMap.nik]||'').trim().toUpperCase(),name:String(r[colMap.name]||'').trim(),position:colMap.position?String(r[colMap.position]||'').trim():'',store:colMap.store?String(r[colMap.store]||'').trim():''}; }).filter(function(u){return u.id&&u.name;});
+      var res=await api('POST','/api/admin/users/import',{users},adminToken);
+      await renderPengguna();
+      toast('Import: '+res.added+' ditambahkan, '+res.skipped+' dilewati.','success');
+    } catch(err){ toast('Gagal membaca file: '+err.message,'err'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function exportUsers() {
+  try {
+    var users=await api('GET','/api/admin/users',null,adminToken);
+    if(!users.length){toast('Tidak ada pengguna.','err');return;}
+    var wsData=[['NIK','Nama','Posisi','Toko','Status','Kata Sandi Diatur']];
+    users.forEach(function(u){ wsData.push([u.id,u.name||'',u.position||'',u.store||'',u.active!==false?'Aktif':'Nonaktif',u.hasPassword?'Ya':'Belum']); });
+    if(typeof XLSX!=='undefined'){
+      var wb=XLSX.utils.book_new(); var ws=XLSX.utils.aoa_to_sheet(wsData);
+      ws['!cols']=[{wch:12},{wch:28},{wch:22},{wch:28},{wch:10},{wch:16}];
+      XLSX.utils.book_append_sheet(wb,ws,'Pengguna'); XLSX.writeFile(wb,'innervoice-pengguna-'+new Date().toISOString().slice(0,10)+'.xlsx');
+      toast('Data pengguna diekspor ('+users.length+' pengguna).','success');
+    }
+  } catch(e){ toast(e.message,'err'); }
+}
+
+// ════════════════════════════════════════
+// UTILITIES
+// ════════════════════════════════════════
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(function(overlay){
+  overlay.addEventListener('click',function(e){ if(e.target===overlay) overlay.classList.remove('open'); });
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    document.querySelectorAll('.modal-overlay.open').forEach(function(m){m.classList.remove('open');});
+    if(document.getElementById('admin-pass-overlay').classList.contains('open')) closeAdminGate();
+  }
+});
+
+function togglePw(inputId,btn){
+  var inp=document.getElementById(inputId); if(!inp) return;
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';} else{inp.type='password';btn.textContent='👁';}
+}
+
+function escH(str){
+  if(!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function updateStrength(inputId,strengthId){
+  var val=document.getElementById(inputId).value;
+  var bars=document.querySelectorAll('#'+strengthId+' .pw-strength-bar');
+  var label=document.getElementById(strengthId.replace('strength','str-label'));
+  if(!bars.length) return;
+  bars.forEach(function(b){b.className='pw-strength-bar';});
+  if(!val){if(label) label.textContent=''; return;}
+  var score=0;
+  if(val.length>=4) score++;
+  if(val.length>=8) score++;
+  if(/[0-9]/.test(val)&&/[a-zA-Z]/.test(val)) score++;
+  if(/[^a-zA-Z0-9]/.test(val)) score++;
+  if(score<=1){bars[0].classList.add('weak');if(label){label.textContent='Lemah';label.style.color='#e74c3c';}}
+  else if(score<=2){bars[0].classList.add('medium');bars[1].classList.add('medium');if(label){label.textContent='Sedang';label.style.color='#f39c12';}}
+  else{bars[0].classList.add('strong');bars[1].classList.add('strong');bars[2].classList.add('strong');if(label){label.textContent='Kuat';label.style.color='var(--accent-mid)';}}
+}
+
+var toastTimer;
+function toast(msg,type){
+  type=type||'success';
+  var el=document.getElementById('toast');
+  el.className='toast toast-'+type;
+  document.getElementById('toast-msg').textContent=msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){el.classList.remove('show');},3200);
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  var ta=document.getElementById('story-text');
+  if(ta) ta.addEventListener('input',function(){
+    var len=ta.value.length;
+    var el=document.getElementById('story-char-count');
+    if(el){el.textContent=len+' / 2000 karakter';el.style.color=len>1800?'var(--red)':'var(--ink-4)';}
+  });
+  // Auto-restore session if logged in
+  if(currentUser&&currentUser.token){
+    enterHome();
+  }
+});
+</script>
+</body>
+</html>
