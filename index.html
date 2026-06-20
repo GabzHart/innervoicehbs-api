@@ -97,7 +97,7 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
 .card-sm{padding:16px;border-radius:var(--r)}
 
 /* ─── PAGE STRUCTURE ─── */
-.page-body{flex:1;overflow-y:auto;padding:32px 24px 48px;max-width:520px;width:100%;margin:0 auto}
+.page-body{flex:1;overflow-y:auto;padding:32px 24px 48px;max-width:720px;width:100%;margin:0 auto}
 .page-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--ink);margin-bottom:.3rem}
 .page-sub{font-size:.85rem;color:var(--ink-3);margin-bottom:1.6rem;line-height:1.55}
 .section-title{font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);margin-bottom:.75rem}
@@ -126,7 +126,7 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
 
 /* ─── LOGIN SCREEN ─── */
 #s-login{background:var(--paper);align-items:center;justify-content:center;padding:24px;position:relative}
-.login-wrap{width:100%;max-width:400px}
+.login-wrap{width:100%;max-width:480px}
 .login-header{text-align:center;margin-bottom:2rem}
 .login-logo{width:56px;height:56px;border-radius:16px;background:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 8px 24px rgba(26,58,42,.25);animation:fadeSlideUp .6s cubic-bezier(.16,1,.3,1) both}
 .login-logo svg{width:26px;height:26px;fill:none;stroke:white;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -136,7 +136,7 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
 
 /* ─── SET PASSWORD ─── */
 #s-setpass{background:var(--paper);align-items:center;justify-content:center;padding:24px}
-.setpass-wrap{width:100%;max-width:400px}
+.setpass-wrap{width:100%;max-width:480px}
 
 /* ─── HOME ─── */
 #s-home{background:var(--paper)}
@@ -178,7 +178,7 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
 /* ─── MODAL ─── */
 .modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:24px}
 .modal-overlay.open{display:flex;animation:fadeIn .2s both}
-.modal{width:100%;max-width:500px;background:white;border-radius:var(--r-lg);padding:0;max-height:90vh;display:flex;flex-direction:column;animation:scaleIn .38s cubic-bezier(.16,1,.3,1) both;box-shadow:0 24px 64px rgba(0,0,0,.18)}
+.modal{width:100%;max-width:640px;background:white;border-radius:var(--r-lg);padding:0;max-height:90vh;display:flex;flex-direction:column;animation:scaleIn .38s cubic-bezier(.16,1,.3,1) both;box-shadow:0 24px 64px rgba(0,0,0,.18)}
 .modal-header{padding:16px 20px 12px;border-bottom:1px solid var(--line-2);flex-shrink:0}
 .modal-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--ink)}
 .modal-body{padding:16px 20px;overflow-y:auto;flex:1}
@@ -243,7 +243,7 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
 
 /* ─── SUCCESS ─── */
 #s-success{background:var(--paper);align-items:center;justify-content:center;padding:24px}
-.success-wrap{width:100%;max-width:380px;text-align:center}
+.success-wrap{width:100%;max-width:480px;text-align:center}
 .success-icon{width:72px;height:72px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 1.4rem;box-shadow:0 8px 32px rgba(26,58,42,.25)}
 .success-icon svg{width:32px;height:32px;fill:none;stroke:white;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .success-title{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--ink);margin-bottom:.6rem}
@@ -257,6 +257,16 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
 .inline-action{font-size:.78rem;color:var(--accent-mid);cursor:pointer;font-weight:500;text-decoration:underline;text-underline-offset:2px}
 
 /* ─── RESPONSIVE ─── */
+@media(min-width:768px){
+  .login-wrap,.setpass-wrap,.success-wrap{max-width:520px}
+  .cat-grid{grid-template-columns:repeat(4,1fr)}
+  .admin-stats{grid-template-columns:repeat(4,1fr)}
+  .modal{max-width:680px}
+}
+@media(min-width:1024px){
+  .login-wrap{max-width:560px}
+  .cat-grid{grid-template-columns:repeat(4,1fr)}
+}
 @media(max-width:600px){
   .admin-stats{grid-template-columns:1fr 1fr}
   .admin-stats .stat-card:last-child{display:none}
@@ -532,7 +542,7 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
       </div>
     </div>
   </div>
-  <div style="flex:1;overflow-y:auto;padding:24px 20px 40px;max-width:520px;width:100%;margin:0 auto">
+  <div style="flex:1;overflow-y:auto;padding:24px 20px 40px;max-width:720px;width:100%;margin:0 auto">
     <div class="anim-up">
       <div class="section-title">Bagikan Cerita</div>
       <p style="font-size:.83rem;color:var(--ink-3);margin-bottom:1.2rem;line-height:1.55">Pilih kategori yang paling sesuai, lalu bagikan apa yang ada di pikiran Anda. Kiriman bersifat rahasia.</p>
@@ -566,7 +576,7 @@ html,body{height:100%;font-family:'IBM Plex Sans',sans-serif;background:var(--pa
     <div class="topbar-name">Inner<span>Voice</span></div>
     <div style="width:70px"></div>
   </div>
-  <div style="flex:1;overflow-y:auto;padding:24px 20px 48px;max-width:520px;width:100%;margin:0 auto">
+  <div style="flex:1;overflow-y:auto;padding:24px 20px 48px;max-width:720px;width:100%;margin:0 auto">
     <div class="anim-up">
       <div class="section-title">Kategori</div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.4rem">
