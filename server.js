@@ -19,16 +19,16 @@ const PORT = process.env.PORT || 3001;
 // Trust Render's proxy (required for rate limiting to work correctly)
 app.set('trust proxy', 1);
 
-// ─── Admin password (set via env var in production) ───────────────────────────
+// â”€â”€â”€ Admin password (set via env var in production) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const ADMIN_PASS = process.env.ADMIN_PASS || 'adminonly';
 
-// ─── DB file path (Railway/Render: use /tmp or a persistent volume) ───────────
+// â”€â”€â”€ DB file path (Railway/Render: use /tmp or a persistent volume) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'db.json');
 
-// ─── Middleware ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.use(express.json({ limit: '1mb' }));
 
-// CORS — allow your Netlify domain + localhost for dev
+// CORS â€” allow your Netlify domain + localhost for dev
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '*').split(',');
 app.use(cors({
   origin: function(origin, callback) {
@@ -42,7 +42,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Rate limiting — prevent brute-force on login
+// Rate limiting â€” prevent brute-force on login
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 20,
@@ -55,7 +55,7 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-// ─── DB helpers ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ DB helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function readDB() {
   try {
     if (!fs.existsSync(DB_PATH)) return { users: {}, stories: [] };
@@ -91,7 +91,7 @@ function seedIfEmpty() {
 }
 seedIfEmpty();
 
-// ─── Auth helper ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Auth helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Simple btoa equivalent for Node.js
 function encodePass(plain) {
   return Buffer.from(plain).toString('base64');
@@ -100,7 +100,7 @@ function decodePass(encoded) {
   return Buffer.from(encoded, 'base64').toString('utf8');
 }
 
-// ─── Middleware: verify admin token ───────────────────────────────────────────
+// â”€â”€â”€ Middleware: verify admin token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function requireAdmin(req, res, next) {
   const auth = req.headers['authorization'] || '';
   const token = auth.replace('Bearer ', '');
@@ -112,7 +112,7 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ─── Middleware: verify user session token ────────────────────────────────────
+// â”€â”€â”€ Middleware: verify user session token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function requireUser(req, res, next) {
   const auth = req.headers['authorization'] || '';
   const token = auth.replace('Bearer ', '');
@@ -136,14 +136,14 @@ function requireUser(req, res, next) {
   }
 }
 
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // ROUTES
-// ════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
-// ─── POST /api/login ──────────────────────────────────────────────────────────
+// â”€â”€â”€ POST /api/login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Body: { nik, password }
 // Returns: { token, user } or { firstLogin: true } if no password set yet
 app.post('/api/login', loginLimiter, (req, res) => {
@@ -156,7 +156,7 @@ app.post('/api/login', loginLimiter, (req, res) => {
     return res.status(404).json({ error: 'NIK tidak ditemukan atau akses telah dicabut.' });
   }
 
-  // First login — no password set
+  // First login â€” no password set
   if (!user.password) {
     return res.json({ firstLogin: true, name: user.name });
   }
@@ -180,8 +180,8 @@ app.post('/api/login', loginLimiter, (req, res) => {
   });
 });
 
-// ─── POST /api/set-password ───────────────────────────────────────────────────
-// Body: { nik, password } — for first-time login
+// â”€â”€â”€ POST /api/set-password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Body: { nik, password } â€” for first-time login
 app.post('/api/set-password', loginLimiter, (req, res) => {
   const { nik, password } = req.body || {};
   if (!nik || !password) return res.status(400).json({ error: 'NIK dan kata sandi wajib diisi.' });
@@ -203,7 +203,7 @@ app.post('/api/set-password', loginLimiter, (req, res) => {
   });
 });
 
-// ─── PUT /api/change-password ─────────────────────────────────────────────────
+// â”€â”€â”€ PUT /api/change-password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Requires user auth. Body: { oldPassword, newPassword }
 app.put('/api/change-password', requireUser, (req, res) => {
   const { oldPassword, newPassword } = req.body || {};
@@ -223,14 +223,14 @@ app.put('/api/change-password', requireUser, (req, res) => {
   res.json({ token: newToken });
 });
 
-// ─── GET /api/stories/mine ────────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/stories/mine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/stories/mine', requireUser, (req, res) => {
   const db = readDB();
   const mine = db.stories.filter(s => s.userId === req.currentUser.id);
   res.json(mine);
 });
 
-// ─── POST /api/stories ────────────────────────────────────────────────────────
+// â”€â”€â”€ POST /api/stories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.post('/api/stories', requireUser, (req, res) => {
   const { category, categoryIcon, text } = req.body || {};
   if (!category || !text || !text.trim()) {
@@ -259,13 +259,13 @@ app.post('/api/stories', requireUser, (req, res) => {
   res.json({ id: ticket });
 });
 
-// ─── ADMIN: GET /api/admin/stories ───────────────────────────────────────────
+// â”€â”€â”€ ADMIN: GET /api/admin/stories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/admin/stories', requireAdmin, (req, res) => {
   const db = readDB();
   res.json(db.stories);
 });
 
-// ─── ADMIN: PUT /api/admin/stories/:id/reviewed ───────────────────────────────
+// â”€â”€â”€ ADMIN: PUT /api/admin/stories/:id/reviewed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.put('/api/admin/stories/:id/reviewed', requireAdmin, (req, res) => {
   const db = readDB();
   const s = db.stories.find(x => x.id === req.params.id);
@@ -275,7 +275,7 @@ app.put('/api/admin/stories/:id/reviewed', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// ─── ADMIN: DELETE /api/admin/stories/:id ────────────────────────────────────
+// â”€â”€â”€ ADMIN: DELETE /api/admin/stories/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.delete('/api/admin/stories/:id', requireAdmin, (req, res) => {
   const db = readDB();
   const before = db.stories.length;
@@ -285,7 +285,7 @@ app.delete('/api/admin/stories/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// ─── ADMIN: GET /api/admin/users ─────────────────────────────────────────────
+// â”€â”€â”€ ADMIN: GET /api/admin/users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/admin/users', requireAdmin, (req, res) => {
   const db = readDB();
   // Never send passwords to client
@@ -297,7 +297,7 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
   res.json(safe);
 });
 
-// ─── ADMIN: POST /api/admin/users ────────────────────────────────────────────
+// â”€â”€â”€ ADMIN: POST /api/admin/users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.post('/api/admin/users', requireAdmin, (req, res) => {
   const { id, name, position, store, password } = req.body || {};
   if (!id || !name) return res.status(400).json({ error: 'NIK dan Nama wajib diisi.' });
@@ -315,7 +315,7 @@ app.post('/api/admin/users', requireAdmin, (req, res) => {
   res.json({ ok: true, id: nik });
 });
 
-// ─── ADMIN: PUT /api/admin/users/:id ─────────────────────────────────────────
+// â”€â”€â”€ ADMIN: PUT /api/admin/users/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.put('/api/admin/users/:id', requireAdmin, (req, res) => {
   const oldId = req.params.id;
   const { id: newId, name, position, store, password } = req.body || {};
@@ -335,7 +335,7 @@ app.put('/api/admin/users/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// ─── ADMIN: PUT /api/admin/users/:id/toggle ──────────────────────────────────
+// â”€â”€â”€ ADMIN: PUT /api/admin/users/:id/toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.put('/api/admin/users/:id/toggle', requireAdmin, (req, res) => {
   const db = readDB();
   const u = db.users[req.params.id];
@@ -345,7 +345,7 @@ app.put('/api/admin/users/:id/toggle', requireAdmin, (req, res) => {
   res.json({ ok: true, active: u.active });
 });
 
-// ─── ADMIN: PUT /api/admin/users/:id/reset-password ──────────────────────────
+// â”€â”€â”€ ADMIN: PUT /api/admin/users/:id/reset-password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.put('/api/admin/users/:id/reset-password', requireAdmin, (req, res) => {
   const db = readDB();
   const u = db.users[req.params.id];
@@ -355,7 +355,7 @@ app.put('/api/admin/users/:id/reset-password', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// ─── ADMIN: DELETE /api/admin/users/:id ──────────────────────────────────────
+// â”€â”€â”€ ADMIN: DELETE /api/admin/users/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.delete('/api/admin/users/:id', requireAdmin, (req, res) => {
   const db = readDB();
   if (!db.users[req.params.id]) return res.status(404).json({ error: 'Pengguna tidak ditemukan.' });
@@ -364,7 +364,7 @@ app.delete('/api/admin/users/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// ─── ADMIN: POST /api/admin/users/import ─────────────────────────────────────
+// â”€â”€â”€ ADMIN: POST /api/admin/users/import â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.post('/api/admin/users/import', requireAdmin, (req, res) => {
   const { users } = req.body || {};
   if (!Array.isArray(users)) return res.status(400).json({ error: 'Format tidak valid.' });
@@ -382,7 +382,7 @@ app.post('/api/admin/users/import', requireAdmin, (req, res) => {
   res.json({ added, skipped });
 });
 
-// ─── ADMIN: Change admin password ────────────────────────────────────────────
+// â”€â”€â”€ ADMIN: Change admin password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.put('/api/admin/change-password', requireAdmin, (req, res) => {
   const { oldPassword, newPassword } = req.body || {};
   if (!oldPassword || !newPassword) return res.status(400).json({ error: 'Semua field wajib diisi.' });
@@ -400,7 +400,7 @@ app.put('/api/admin/change-password', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// ─── ADMIN: Database (Toko & Posisi) ─────────────────────────────────────────
+// â”€â”€â”€ ADMIN: Database (Toko & Posisi) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // DB stores a `meta` object: { toko: [...], posisi: [...] }
 
 app.get('/api/admin/database', requireAdmin, (req, res) => {
@@ -459,15 +459,17 @@ app.delete('/api/admin/database', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// ─── Serve frontend ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Serve frontend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FRONTEND = path.join(__dirname, 'index.html');
 app.get('/', (req, res) => {
   if (fs.existsSync(FRONTEND)) res.sendFile(FRONTEND);
   else res.json({ ok: true, message: 'InnerVoice API is running.' });
 });
 
-// ─── Start server ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Start server â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.listen(PORT, () => {
   console.log(`InnerVoice API running on port ${PORT}`);
   console.log(`DB path: ${DB_PATH}`);
 });
+
+// updated 2026-06-20 13:31
